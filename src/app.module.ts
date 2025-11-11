@@ -7,11 +7,12 @@ import { ConfigModule } from '@nestjs/config';
 import { MailModule } from './common/mail/mail.module';
 import { SmsModule } from './common/sms/sms.module';
 import { DriverModule } from './driver/driver.module';
+import { VehicleModule } from './vehicle/vehicle.module';
 
 @Module({
 	imports: [AuthModule,
 		ConfigModule.forRoot(),	
-		MongooseModule.forRoot(process.env.MONGO_URL!), MailModule, SmsModule, DriverModule,
+		MongooseModule.forRoot(process.env.MONGO_URL!), MailModule, SmsModule, DriverModule, VehicleModule,
 	
 	],
   controllers: [AppController],

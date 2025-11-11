@@ -19,12 +19,11 @@ import { Sms, SmsSchema } from './schema/sms.schema';
 		MongooseModule.forFeature([
 			{ name: Auth.name, schema: AuthSchema },
 			{ name : Sms.name , schema : SmsSchema}
-		]),
+		]),	
 
-		JwtModule.register({
-			secret: process.env.JWT_SECRET ,
-			signOptions: { expiresIn: '1d' },
-		}),
+			JwtModule.register({
+				secret: process.env.JWT_SECRET ,
+			}),
 	],
   controllers: [AuthController],
 	providers: [AuthService,MailService ,SmsService],

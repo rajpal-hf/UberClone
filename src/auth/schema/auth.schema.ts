@@ -12,7 +12,7 @@ export class Auth {
 	@Prop({ required: true, trim: true , unique :true})
 	email: string 
 
-	@Prop({ required: true, trim: true })
+	@Prop({ required: true, trim: true, unique:true })
 	phone: string 
 
 	@Prop({required :true , trim : true }) 

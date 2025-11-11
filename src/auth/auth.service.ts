@@ -3,20 +3,24 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Auth, AuthDocument } from './schema/auth.schema';
 import { Model } from 'mongoose';
 import { UserRole } from 'src/common/constants';
-import { CreateUserDto, SendOtpDto, UserLoginDto } from './dto';
+import { CreateUserDto, SendOtpDto, UserLoginDto, VerifyNumberDto } from './dto';
 import { randomInt} from 'crypto'
 import type  {Response} from 'express'
 import bcrypt from "bcryptjs"
 import { JwtService } from '@nestjs/jwt';
 import { MailService} from "../common/mail/mail.service"
 import {MailOptions} from "../common/mail/mail.service"
+import { SmsOptions, SmsService } from 'src/common/sms/sms.service';
+import { Sms, SmsDocument } from './schema/sms.schema';
 
 
 @Injectable()
 export class AuthService implements OnApplicationBootstrap {
 	constructor(
 		@InjectModel(Auth.name) private authModel: Model<AuthDocument>,
-		private readonly mailService : MailService,
+		@InjectModel(Sms.name) private smsModel:Model<SmsDocument>,
+		private readonly mailService: MailService,
+		private readonly smsService : SmsService,
 		private jwt : JwtService
 	) { }
 
@@ -39,10 +43,7 @@ export class AuthService implements OnApplicationBootstrap {
 		}
 	}
 
-
-
 	//``````````````````````````````````````````````````````````````````````````````sign up User/driver
-
 
 	async signup(dto: CreateUserDto) {
 		try {
@@ -81,47 +82,7 @@ export class AuthService implements OnApplicationBootstrap {
 
 	}
 
-
-
-	// ```````````````````` send otp ```````````````
-
-  private generateOtp(): string {
-    return String(randomInt(100000, 999999)); // Corrected to return a string
-  }
-
-  async sendOtp(dto: SendOtpDto) {
-    try {
-      const { email } = dto;
-
-      const userExist = await this.authModel.findOne({ email: email });
-      if (userExist) {
-        throw new HttpException('User already exists with this email', 400);
-      }
-
-      const otp = this.generateOtp(); // Generate OTP
-      const subject = 'Your OTP Code';
-      const body = `Your One-Time Password (OTP) is: ${otp}`;
-
-      const mailOptions: MailOptions = {
-        to: email,
-        subject,
-        body,
-      };
-
-      // Send OTP email
-      await this.mailService.sendMail(mailOptions);
-
-      return { success: true, message: 'OTP sent successfully!' };
-    } catch (error) {
-      console.log('Error in sending OTP:', error);
-      throw error instanceof HttpException
-        ? error
-        : new HttpException('Internal Server Error', 500);
-    }
-  }
-
-
-	// login user/driver 
+	// ```````````````````````````````````````````````````````````````````````````````login user/driver 
 	async login(dto: UserLoginDto,  res: Response) {
 		try {
 			const { email, password } = dto;
@@ -141,14 +102,11 @@ export class AuthService implements OnApplicationBootstrap {
 				throw new HttpException('Password does not match', 400);
 			}
 
-			
-
 			const token = await this.signToken(
 				user._id,
 				user.email.toString(),
 				user.role.toString(),
 			);
-
 
 			res.cookie('token', token, {
 				httpOnly: true,
@@ -170,6 +128,7 @@ export class AuthService implements OnApplicationBootstrap {
 		}
 	}
 
+
 	async signToken(userId: any, email: string, role: string) {
 		const payload = { id: userId, email, role };
 		const token = await this.jwt.signAsync(payload, {
@@ -179,8 +138,87 @@ export class AuthService implements OnApplicationBootstrap {
 		return token ;
 	}
 
-	async getALL() {
-		return await this.authModel.find();
-}
+	// ```````````````````` ```````````````````````````````````````````````````````````send otp ```````````````
 
+	private generateOtp(): string {
+		return String(randomInt(100000, 999999)); // Corrected to return a string
 	}
+
+	async emailVerify(dto: SendOtpDto) {
+		try {
+			const { email } = dto;
+
+			const userExist = await this.authModel.findOne({ email: email });
+			if (userExist) {
+				throw new HttpException('User already exists with this email', 400);
+			}
+
+			const otp = this.generateOtp(); // Generate OTP
+			const subject = 'Your OTP Code';
+			const body = `Your One-Time Password (OTP) is: ${otp}`;
+
+			const mailOptions: MailOptions = {
+				to: email,
+				subject,
+				body,
+			};
+
+			// Send OTP email
+			await this.mailService.sendMail(mailOptions);
+
+			return { success: true, message: 'OTP sent successfully!' };
+		} catch (error) {
+			console.log('Error in sending OTP:', error);
+			throw error instanceof HttpException
+				? error
+				: new HttpException('Internal Server Error', 500);
+		}
+	}
+
+
+	async verifyPhone(dto: VerifyNumberDto) {
+		try {
+			// Normalize phone number (remove spaces, etc.)
+			const phone = dto.phone.replace(/\s+/g, '').trim();
+
+			const OTP_EXPIRATION_MS = 5 * 60 * 1000; 
+			const RATE_LIMIT_MS = 60 * 1000;         
+
+			// Check rate limit
+			const recentOtp = await this.smsModel.findOne({
+				phone,
+				createdAt: { $gt: new Date(Date.now() - RATE_LIMIT_MS) },
+			});
+
+			if (recentOtp) {
+				throw new HttpException(
+					'Please wait before requesting another OTP',
+					HttpStatus.TOO_MANY_REQUESTS,
+				);
+			}
+
+			// Generate and hash OTP
+			const otp = this.generateOtp();
+			const hashedOtp = await bcrypt.hash(otp, 10);
+
+			// Send SMS
+			const body = `Your OTP is: ${otp}`;
+			await this.smsService.sendSms({ to: phone, body });
+
+			// Store OTP
+			await this.smsModel.create({
+				phone,
+				otp: hashedOtp,
+				expiresIn: new Date(Date.now() + OTP_EXPIRATION_MS),
+			});
+
+			return { success: true, message: 'OTP sent successfully!' };
+		} catch (error) {
+			throw error instanceof HttpException
+				? error
+				: new HttpException('Internal Server Error', 500);
+		}
+	}
+
+
+}

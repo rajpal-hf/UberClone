@@ -47,15 +47,17 @@ export class UserLoginDto {
 	@IsString()
 	@IsNotEmpty()
 	password: string
-
-
 }
-
-
 export class SendOtpDto {
 	@ApiProperty()
 	@IsNotEmpty()
 	@IsEmail()
 	email : string
+}
+export class VerifyNumberDto	 { 
+	@ApiProperty({example : "+91 7973368197"})
+	@IsString()
+	@IsNotEmpty()
+	phone : string
 }
 

@@ -2,18 +2,21 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 
 @Schema({ timestamps: true })
-export class Otp {
+export class Sms {
 	@Prop({ required: true })
-	email: string;
+	phone: string;
 
 	@Prop({ required: true })
 	otp: string;
 
+	
 	@Prop({ type: Date, required: true })
 	expiresIn: Date;
 }
 
-export type OtpDocument = HydratedDocument<Otp>;
-export const OtpSchema = SchemaFactory.createForClass(Otp);
+export type SmsDocument = HydratedDocument<Sms>;
+export const SmsSchema = SchemaFactory.createForClass(Sms);
 
 
+// TTL - auto delete expire in s
+SmsSchema.index({ expiresIn: 1 }, { expireAfterSeconds: 0 });

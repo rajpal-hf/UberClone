@@ -219,10 +219,11 @@ export class AuthService implements OnApplicationBootstrap {
 
 			// Generate and hash OTP
 			const otp = this.generateOtp();
+			console.log("Opt of this ",otp)
 			const hashedOtp = await bcrypt.hash(otp, 10);
 
 			// Send SMS
-			const body = `Your OTP is: ${otp}`;
+			const body = `BigBoss vekhla eh tere mtlb da nai aa ${otp} ` ;
 			await this.smsService.sendSms({ to: phone, body });
 
 			// Store OTP

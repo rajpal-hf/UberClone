@@ -15,7 +15,6 @@ export class Driver {
 	@Prop()
 	panNumber:string
 
-
 	@Prop()
 	licenseNumber: string;
 

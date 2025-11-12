@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsString, IsOptional } from "class-validator";
+import { IsString, IsOptional, IsNotEmpty } from "class-validator";
 
 export class CreateDriverProfileDto {
 	@ApiProperty({ example: "MH12-2024-AB1234" })
@@ -28,3 +28,8 @@ export class CreateDriverProfileDto {
 	@IsString()
 	vehicleId?: string;
 }
+
+export class StatusDto {
+	@IsNotEmpty()
+	id : string
+} 

@@ -4,11 +4,15 @@ import { Driver, DriverDocument } from './schema/driver.schema';
 import { Model, ObjectId } from 'mongoose';
 import { FileUploadService } from 'src/file-upload/file-upload.service';
 import { CreateDriverProfileDto } from './dto/driver.dto';
+import { error } from 'console';
+import { Auth, AuthDocument } from 'src/auth/schema/auth.schema';
+import { DriverStatus } from 'src/common/constants';
 
 @Injectable()
 export class DriverService {
 	constructor(
 		@InjectModel(Driver.name) private driverModel: Model<DriverDocument>,
+		@InjectModel(Auth.name) private authModel: Model<AuthDocument>,
 		private readonly fileUploadService : FileUploadService
 	) { }
 
@@ -132,4 +136,47 @@ export class DriverService {
 			);
 		}
 	}
+
+	async changeStatusForTrip(id: ObjectId) {
+		try {
+	
+			const driver = await this.driverModel.findById(id);
+
+			
+			if (!driver) {
+				throw new HttpException('Driver not found', 404);
+			}
+
+		
+			const user = await this.authModel.findById(driver.driverId);
+			if (!user) {
+				throw new HttpException('Associated user not found', 404);
+			}
+
+			if (driver.status === DriverStatus.ON_TRIP) {
+				throw new HttpException(
+					'Cannot change availability while driver is on a trip',
+					400,
+				);
+			}
+
+			driver.status =
+				driver.status === DriverStatus.OFFLINE ? DriverStatus.OFFLINE : DriverStatus.ONLINE;
+
+			await driver.save();
+
+			return {
+				message: `Driver is now ${driver.status.toLowerCase()}`,
+				status: driver.status,
+			};
+		} catch (error) {
+			console.error('Error changing driver trip status:', error);
+			throw error instanceof HttpException
+				? error
+				: new HttpException('Internal Server Error', 500);
+		}
+	}
+
+
+
 }

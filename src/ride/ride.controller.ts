@@ -12,28 +12,30 @@ export class RideController {
 	constructor(private rideService: RideService) { }
 
 	// Rider requests a new ride
+	@UseGuards(AuthGuard, RolesGuard)
+	@Roles(UserRole.RIDER)
 	@Post('request')
 	createRide(@Body() dto: CreateRideDto) {
 		return this.rideService.createRide(dto);
 	}
 
 	
-	@UseGuards(AuthGuard,RolesGuard)
-		@Roles(UserRole.DRIVER)
-	@Put(':id/accept')
-	acceptRide(@Param('id') id: string, @Req() req ) {
-		return this.rideService.acceptRide(id, req.user.id);
-	}
+	// @UseGuards(AuthGuard,RolesGuard)
+	// 	@Roles(UserRole.DRIVER)
+	// @Put(':id/accept')
+	// acceptRide(@Param('id') id: string, @Req() req ) {
+	// 	return this.rideService.acceptRide(id, req.user.id);
+	// }
 
-	// Complete ride
-	@Put(':id/complete')
-	completeRide(@Param('id') id: string) {
-		return this.rideService.completeRide(id);
-	}
+	// // Complete ride
+	// @Put(':id/complete')
+	// completeRide(@Param('id') id: string) {
+	// 	return this.rideService.completeRide(id);
+	// }
 
-	// Get ride details
-	@Get(':id')
-	getRide(@Param('id') id: string) {
-		return this.rideService.getRide(id);
-	}
+	// // Get ride details
+	// @Get(':id')
+	// getRide(@Param('id') id: string) {
+	// 	return this.rideService.getRide(id);
+	// }
 }

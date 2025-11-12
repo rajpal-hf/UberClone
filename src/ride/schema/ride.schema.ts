@@ -1,13 +1,13 @@
 // ride.schema.ts
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, HydratedDocument } from 'mongoose';
+import {  HydratedDocument, Types } from 'mongoose';
 
 @Schema({ timestamps: true })
 export class Ride  {
-	@Prop({ required: true })
+	@Prop({ required :true  , type : Types.ObjectId ,ref : 'Auth' })
 	riderId: string;
 
-	@Prop()
+	@Prop({ required: true, type: Types.ObjectId, ref: 'Auth' })
 	driverId?: string;
 
 	@Prop({ type: Object, required: true })
@@ -25,7 +25,7 @@ export class Ride  {
 	};
 
 	@Prop({ default: 'pending' })
-	status: 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled';	
+	rideStatus: 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled';	
 
 	@Prop()
 	fare?: number;

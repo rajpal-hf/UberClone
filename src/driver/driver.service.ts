@@ -2,35 +2,46 @@ import { HttpException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Driver, DriverDocument } from './schema/driver.schema';
 import { Model, ObjectId } from 'mongoose';
+import { FileUploadService } from 'src/file-upload/file-upload.service';
 import { CreateDriverProfileDto } from './dto/driver.dto';
 
 @Injectable()
 export class DriverService {
 	constructor(
 		@InjectModel(Driver.name) private driverModel: Model<DriverDocument>,
+		private readonly fileUploadService : FileUploadService
 	) { }
 
 	async createDriver(id: ObjectId, dto: CreateDriverProfileDto) {
 		const {
 			licenseNumber,
 			panNumber,
-			licensePhotoUrl,
+			licensePhoto,
 			aadhaarNumber,
-			aadhaarFrontUrl,
-			aadhaarBackUrl,
+			aadhaarFront,
+			aadhaarBack,
 			vehicleId,
 		} = dto;
 		const driverId = id;
+
+		console.log('Driver ID:', driverId);
+		console.log('License Number:', licenseNumber);
+		console.log('PAN Number:', panNumber);
+		console.log('License Photo:', licensePhoto);
+		console.log('Aadhaar Number:', aadhaarNumber);
+		console.log('Aadhaar Front:', aadhaarFront);
+		console.log('Aadhaar Back:', aadhaarBack);
+		console.log('Vehicle ID:', vehicleId);
 
 		try {
 			//  Validate required fields
 			if (
 				!licenseNumber ||
 				!panNumber ||
-				!licensePhotoUrl ||
+				!licensePhoto ||
 				!aadhaarNumber ||
-				!aadhaarFrontUrl ||
-				!aadhaarBackUrl ||
+				!aadhaarFront ||
+				!aadhaarBack ||
 				!vehicleId
 			) {
 				throw new HttpException('All fields are required', 400);
@@ -88,10 +99,10 @@ export class DriverService {
 				driverId,
 				licenseNumber,
 				panNumber,
-				licensePhotoUrl,
+				licensePhotoUrl: licensePhoto,
 				aadhaarNumber,
-				aadhaarFrontUrl,
-				aadhaarBackUrl,
+				aadhaarFrontUrl:aadhaarFront,
+				aadhaarBackUrl:aadhaarBack,
 				vehicleId,
 			});
 

@@ -1,60 +1,30 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsString, IsOptional, IsNumber, IsArray, ValidateNested } from "class-validator";
-
+import { IsString, IsOptional } from "class-validator";
 
 export class CreateDriverProfileDto {
-
-
-	@ApiProperty({
-		description: "Driver license number",
-		example: "MH12-2024-AB1234"
-	})
+	@ApiProperty({ example: "MH12-2024-AB1234" })
 	@IsString()
 	licenseNumber: string;
-	
-	
-	@ApiProperty({
-		description: "Driver Pan number",
-		example: "AAACH2702H"
-	})
+
+	@ApiProperty({ example: "AAACH2702H" })
 	@IsString()
 	panNumber: string;
 
-	@ApiProperty({
-		description: "URL of uploaded driver license photo",
-		example: "https://example.com/license.jpg"
-	})
-	@IsString()
-	licensePhotoUrl: string;
+	@ApiProperty({ type: "string", format: "binary", required: false })
+	licensePhoto?: any;
 
-	@ApiProperty({
-		description: "Aadhaar card number",
-		example: "1234-5678-9012"
-	})
+	@ApiProperty({ example: "123456789012" })
 	@IsString()
 	aadhaarNumber: string;
 
-	@ApiProperty({
-		description: "URL of Aadhaar front image",
-		example: "https://example.com/aadhaar-front.jpg"
-	})
-	@IsString()
-	aadhaarFrontUrl: string;
+	@ApiProperty({ type: "string", format: "binary", required: false })
+	aadhaarFront?: any;
 
-	@ApiProperty({
-		description: "URL of Aadhaar back image",
-		example: "https://example.com/aadhaar-back.jpg"
-	})
-	@IsString()
-	aadhaarBackUrl: string;
+	@ApiProperty({ type: "string", format: "binary", required: false })
+	aadhaarBack?: any;
 
-	@ApiProperty({
-		description: "Optional Vehicle ID (if vehicle already registered)",
-		required: false,
-		example: "6731a6b3e41b5f8fcedda922"
-	})
+	@ApiProperty({ required: false, example: "6731a6b3e41b5f8fcedda922" })
 	@IsOptional()
 	@IsString()
 	vehicleId?: string;
-
 }

@@ -22,7 +22,7 @@ export class VehicleService {
 				throw new HttpException('All fields are required', 400);
 			}
 
-			/**
+			/*
 			 A driver cannot have two vehicles with the same type
 			 */
 			const existingVehicleByDriverType = await this.vehicleModel.findOne({

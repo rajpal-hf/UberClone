@@ -30,4 +30,4 @@ export type AuthDocument = HydratedDocument<Auth>
 
 export const AuthSchema = SchemaFactory.createForClass(Auth)
 
-export { UserRole };
+

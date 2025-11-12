@@ -38,16 +38,15 @@ export class CreateUserDto {
 
 
 export class UserLoginDto { 
-	@ApiProperty({ example: "test@gmail.com" })
-	@IsEmail()
+	@ApiProperty({ example: "+917973368197" })
 	@IsNotEmpty()
-	email: string
+	phone: string
 
-	@ApiProperty({ example: "1111" })
-	@IsString()
+	@ApiProperty({ example: "123456" })
 	@IsNotEmpty()
-	password: string
+	otp: string
 }
+
 export class SendOtpDto {
 	@ApiProperty()
 	@IsNotEmpty()

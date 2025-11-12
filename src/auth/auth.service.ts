@@ -24,6 +24,9 @@ export class AuthService implements OnApplicationBootstrap {
 		private jwt : JwtService
 	) { }
 
+	private generateOtp(): string {
+		return String(randomInt(100000, 999999)); // Corrected to return a string
+	}
 
 	async onApplicationBootstrap() {
 		const admin = await this.authModel.findOne({ email: "admin@gmail.com" })
@@ -47,7 +50,8 @@ export class AuthService implements OnApplicationBootstrap {
 
 	async signup(dto: CreateUserDto) {
 		try {
-			const { name, password, phone, email, role } = dto
+			const { name, password, email, role } = dto
+			const phone = dto.phone.replace(/\s+/g, '').trim();
 
 			if (!name || !password || !phone || !email || !role) {
 				throw new HttpException("All Fields are required", 400)
@@ -85,48 +89,66 @@ export class AuthService implements OnApplicationBootstrap {
 	// ```````````````````````````````````````````````````````````````````````````````login user/driver 
 	async login(dto: UserLoginDto,  res: Response) {
 		try {
-			const { email, password } = dto;
+        
+        const phone = dto.phone.replace(/\s+/g, '').trim();
+        const { otp } = dto;
 
-			if (!email || !password) {
-				throw new HttpException('All fields are required', 400);
-			}
+        if (!phone || !otp) {
+            throw new HttpException('All fields are required', HttpStatus.BAD_REQUEST);
+        }
 
-			const user = await this.authModel.findOne({ email });
-			if (!user) {
-				throw new HttpException('User with this email not found', 400);
-			}
+        const user = await this.authModel.findOne({ phone });
+        if (!user) {
+            throw new HttpException('User with this phone not found', HttpStatus.BAD_REQUEST);
+        }
 
-			// Check password
-			const checkPass = await bcrypt.compare(password, user.password);
-			if (!checkPass) {
-				throw new HttpException('Password does not match', 400);
-			}
+     
+        const otpRecord = await this.smsModel.findOne({ phone }).sort({ createdAt: -1 });
+        if (!otpRecord) {
+            throw new HttpException('OTP not found', HttpStatus.BAD_REQUEST);
+        }
 
-			const token = await this.signToken(
-				user._id,
-				user.email.toString(),
-				user.role.toString(),
-			);
+      
+        if (otpRecord.expiresIn < new Date()) {
+            throw new HttpException('OTP expired', HttpStatus.BAD_REQUEST);
+        }
 
-			res.cookie('token', token, {
-				httpOnly: true,
-				maxAge: 24 * 60 * 60 * 1000, 
-			});
+        
+        const isOtpValid = await bcrypt.compare(otp, otpRecord.otp);
+        if (!isOtpValid) {
+            throw new HttpException('OTP does not match', HttpStatus.BAD_REQUEST);
+        }
 
-			user.password = "-----";
+        // Generate JWT token
+        const token = await this.signToken(
+            user._id,
+            user.email.toString(),
+            user.role.toString()
+        );
 
-			return {
-				success: true,
-				message: 'Login successful',
-				user,
-				tok : token,
-			};
-		} catch (error) {
-			throw error instanceof HttpException
-				? error
-				: new HttpException('Internal Server Error - login', 500);
-		}
-	}
+        // Set cookie
+        res.cookie('token', token, {
+            httpOnly: true,
+            maxAge: 24 * 60 * 60 * 1000, // 1 day
+        });
+
+        // Hide password
+        user.password = '-----';
+
+        return {
+            success: true,
+            message: 'Login successful',
+            user,
+            token,
+        };
+
+    } catch (error) {
+        throw error instanceof HttpException
+            ? error
+            : new HttpException('Internal Server Error - login', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+}
+
 
 
 	async signToken(userId: any, email: string, role: string) {
@@ -140,9 +162,7 @@ export class AuthService implements OnApplicationBootstrap {
 
 	// ```````````````````` ```````````````````````````````````````````````````````````send otp ```````````````
 
-	private generateOtp(): string {
-		return String(randomInt(100000, 999999)); // Corrected to return a string
-	}
+
 
 	async emailVerify(dto: SendOtpDto) {
 		try {

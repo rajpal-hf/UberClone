@@ -6,7 +6,7 @@ import { VehicleType, VerficationSTATUS } from "src/common/constants";
 
 
 @Schema({ timestamps: true })
-export class Vehicle extends Document {
+export class Vehicle  {
   @Prop({ type: Types.ObjectId, ref: 'Auth', required: true })
   driverId: string;
 

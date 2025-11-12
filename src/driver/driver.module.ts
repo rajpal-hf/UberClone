@@ -4,18 +4,19 @@ import { DriverService } from './driver.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Driver, DriverSchema } from './schema/driver.schema';
 import { JwtModule } from '@nestjs/jwt';
+import { FileUploadService } from 'src/file-upload/file-upload.service';
 
 @Module({
-	imports: [ 
+	imports: [
 		MongooseModule.forFeature([
 			{ name : Driver.name , schema : DriverSchema}
-			
 		]),
 		JwtModule.register({
 				secret: process.env.JWT_SECRET ,
 		}),
 	],
+	
   controllers: [DriverController],
-  providers: [DriverService]
+	providers: [DriverService, FileUploadService]
 })
 export class DriverModule {}

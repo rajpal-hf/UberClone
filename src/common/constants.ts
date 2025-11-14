@@ -24,3 +24,8 @@ export enum DriverStatus {
 	OFFLINE = "offline",
 	ON_TRIP = "on_trip"
 }
+
+export enum RideCancelBy {
+	DRIVER = "driver",
+	RIDER = "rider"
+}

@@ -1,45 +1,43 @@
 
-import { IsOptional, IsInt, Min, IsMongoId } from 'class-validator';
+import { IsOptional, IsInt, Min, IsMongoId, IsNotEmpty } from 'class-validator';
 import { Type } from 'class-transformer';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class GetUsersDto {
+	@ApiProperty()
 	@IsOptional()
 	@Type(() => Number)
 	@IsInt()
-	@Min(1)
+	
 	page?: number = 1;
 
+	@ApiProperty()
 	@IsOptional()
 	@Type(() => Number)
 	@IsInt()
-	@Min(1)
+
 	limit?: number = 10;
 }
 
 export class GetDriversDto {
+	@ApiProperty({example : 1})
 	@IsOptional()
 	@Type(() => Number)
 	@IsInt()
-	@Min(1)
 	page?: number = 1;
 
+	@ApiProperty()
 	@IsOptional()
 	@Type(() => Number)
 	@IsInt()
-	@Min(1)
-	limit?: number = 10;
+	limit?: number = 10;	
 }
-
-
-
 
 export class DriverActionDto {
-	@IsMongoId()
-	driverId: string;
+	@ApiProperty()
+	@IsNotEmpty()
+	userId: string;
 }
-
-
-
 
 export class VehicleActionDto {
 	@IsMongoId()

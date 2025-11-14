@@ -17,6 +17,4 @@ export class Sms {
 export type SmsDocument = HydratedDocument<Sms>;
 export const SmsSchema = SchemaFactory.createForClass(Sms);
 
-
-// TTL - auto delete expire in s
 SmsSchema.index({ expiresIn: 1 }, { expireAfterSeconds: 0 });

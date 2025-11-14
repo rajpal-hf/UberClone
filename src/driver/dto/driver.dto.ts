@@ -23,10 +23,6 @@ export class CreateDriverProfileDto {
 	@ApiProperty({ type: "string", format: "binary", required: false })
 	aadhaarBack?: any;
 
-	@ApiProperty({ required: false, example: "6731a6b3e41b5f8fcedda922" })
-	@IsOptional()
-	@IsString()
-	vehicleId?: string;
 }
 
 export class StatusDto {

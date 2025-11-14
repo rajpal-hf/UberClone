@@ -16,4 +16,6 @@ export class Otp {
 export type OtpDocument = HydratedDocument<Otp>;
 export const OtpSchema = SchemaFactory.createForClass(Otp);
 
+OtpSchema.index({ expiresIn: 1 }, { expireAfterSeconds: 0 });
+
 

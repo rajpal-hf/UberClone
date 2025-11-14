@@ -1,10 +1,10 @@
 import { Injectable, HttpException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { Model, ObjectId, Types } from 'mongoose';
 import { Auth, AuthDocument } from 'src/auth/schema/auth.schema';
 import { Driver, DriverDocument } from 'src/driver/schema/driver.schema';
 import { Vehicle, VehicleDocument } from 'src/vehicle/schema/vehicle.schema';
-import { VerficationSTATUS, DriverStatus } from 'src/common/constants';
+import { VerficationSTATUS, UserRole } from 'src/common/constants';
 
 @Injectable()
 export class AdminService {
@@ -15,72 +15,117 @@ export class AdminService {
 	) { }
 
 	// ------------------ USERS ------------------
-	async getUser(page:number, limit :number) {
+	async getRider(page: number, limit: number) {
 		
+		try {
 		const skip = (page - 1) * limit;
-		const total = await this.authModel.countDocuments();
+		const total = await this.authModel.countDocuments({role: UserRole.RIDER});
 		const users = await this.authModel
-			.find()
+			.find({role: UserRole.RIDER})
 			.skip(skip)
 			.limit(limit)
 			.select('-password') 
 			.lean();
 
-		return {
+
+		const totalPages = Math.ceil(total / limit); 
+			return {
+				page,
+				limit,
 			total,
-			page,
-			limit,
+			totalPages,
 			users,
 		};
+		} catch (error) {
+			console.log(error)	
+			throw error instanceof HttpException ? error : new HttpException("Internal Server Error - getting users", 500)
+		}
+		
 	}
 
 	
+
+	//  `````````````````Drivers``````````````
 	async getDriver(page: number, limit: number) {
-		const skip = (page - 1) * limit;
-		const total = await this.driverModel.countDocuments();
-		const drivers = await this.driverModel
-			.find()
-			.skip(skip)
-			.limit(limit)
-			.populate('driverId', 'email phone name') 
-			.populate('vehicleId') 
-			.lean();
 
-		return {
-			total,
-			page,
-			limit,
-			drivers,
-		};
-	}
-	async GetNewDrivers(page: number, limit: number) {
-		const skip = (page - 1) * limit;
-		const total = await this.driverModel.countDocuments();
+		try {
+			const skip = (page - 1) * limit;
+			const total = await this.driverModel.countDocuments();
+			const drivers = await this.driverModel
+				.find()
+				.skip(skip)
+				.limit(limit)
+				.populate('userId', 'email phone name')
+				.populate('vehicleId')
+				.lean();
+			
+			console.log(drivers)
+			
+			const totalPages = Math.ceil(total / limit);
 
+			return {
+				total,
+				totalPages,
+				page,
+				limit,
+				drivers,
+			};
+		} catch (error) {
+			console.log(error)
+			throw error instanceof HttpException ? error : new HttpException("Internal Server Error - getting driver", 500)
+		}
 		
-		const drivers = await this.driverModel
-			.find()
-			.skip(skip)
-			.limit(limit)
-			.populate('driverId', 'email phone name') 
-			.populate('vehicleId') 
-			.lean();
+	}
 
-		return {
-			total,
-			page,
-			limit,
-			drivers,
-		};
+
+	async getNewDrivers(page: number, limit: number) {
+		try {
+
+			const skip = (page - 1) * limit;
+			const total = await this.driverModel.countDocuments({
+				verificationStatusFromAdmin: VerficationSTATUS.PENDING,
+			});
+
+
+			const drivers = await this.driverModel
+				.find({
+					verificationStatusFromAdmin: VerficationSTATUS.PENDING,
+				})
+				.skip(skip)
+				.limit(limit)
+				.populate('userId', 'email phone name')
+				.populate('vehicleId')
+				.lean();
+
+			const totalPages = Math.ceil(total / limit);
+
+			return {
+				total,
+				totalPages,
+				page,
+				limit,
+				drivers,
+			};
+		} catch (error) {
+			console.log(error)
+			throw error instanceof HttpException ? error : new HttpException("Internal Server Error - getting driver", 500)
+		}
+		
 	}
 
 	// ------------------ ACCEPT DRIVER ------------------
-	async acceptDriver(driverId: string) {
-		if (!Types.ObjectId.isValid(driverId)) {
+	async acceptDriver(id: string) {
+
+		if (!Types.ObjectId.isValid(id)) {
 			throw new HttpException('Invalid driver ID', 400);
 		}
 
-		const driver = await this.driverModel.findById(driverId);
+		const userId	 =	new Types.ObjectId(id);
+		console.log("idddddddddddddddd",id)
+		console.log("idddddddddddddddd", typeof(id))
+
+		const driver = await this.driverModel.findOne({ userId : userId });
+		console.log("Driverrrrrrrrrrrrrrr",driver)
 		if (!driver) {
 			throw new HttpException('Driver not found', 404);
 		}
@@ -89,7 +134,7 @@ export class AdminService {
 			throw new HttpException('Driver is already accepted', 409);
 		}
 
-		// Multi-checks: ensure driver's vehicle exists and no duplicates
+		
 		if (!driver.vehicleId) {
 			throw new HttpException('Driver has no vehicle assigned', 400);
 		}
@@ -104,19 +149,16 @@ export class AdminService {
 			throw new HttpException('Vehicle is already verified', 409);
 		}
 
-		// Accept driver
+		// Accept driver 
 		driver.verificationStatusFromAdmin = VerficationSTATUS.VERIFIED;
 		await driver.save();
 
-		// Optionally accept vehicle too
-		vehicle.verificationStatus = VerficationSTATUS.VERIFIED;
-		await vehicle.save();
-
+		
 		return {
 			message: 'Driver and assigned vehicle accepted successfully',
 			driver,
 			vehicle,
-		};
+		};	
 	}
 
 	// ------------------ ACCEPT VEHICLE ------------------
@@ -135,7 +177,7 @@ export class AdminService {
 		}
 
 		// Multi-checks: ensure driver exists and is verified
-		const driver = await this.driverModel.findById(vehicle.driverId);
+		const driver = await this.driverModel.findById(vehicle.userId);
 		if (!driver) {
 			throw new HttpException('Driver not found for this vehicle', 404);
 		}

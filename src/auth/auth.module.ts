@@ -9,6 +9,8 @@ import { MailService } from '../common/mail/mail.service'
 import { SmsModule } from 'src/common/sms/sms.module';
 import { SmsService } from 'src/common/sms/sms.service';
 import { Sms, SmsSchema } from './schema/sms.schema';
+import { Otp, OtpSchema } from './schema/otp.schema';
+import { Driver, DriverSchema } from 'src/driver/schema/driver.schema';
 
 
 
@@ -18,7 +20,9 @@ import { Sms, SmsSchema } from './schema/sms.schema';
 		SmsModule,
 		MongooseModule.forFeature([
 			{ name: Auth.name, schema: AuthSchema },
-			{ name : Sms.name , schema : SmsSchema}
+			{ name : Sms.name , schema : SmsSchema},
+			{ name : Otp.name , schema : OtpSchema},
+			{ name : Driver.name , schema : DriverSchema},
 		]),	
 
 			JwtModule.register({

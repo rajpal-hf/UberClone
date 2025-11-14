@@ -1,16 +1,18 @@
 // driver.schema.ts
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Document, HydratedDocument } from "mongoose";
+import * as mongoose from "mongoose";
 import { Types } from "mongoose";
+import { Auth } from "src/auth/schema/auth.schema";
 import { DriverStatus, VerficationSTATUS } from "src/common/constants";
+import { Vehicle } from "src/vehicle/schema/vehicle.schema";
 
 @Schema({ timestamps: true })
 export class Driver {
 	@Prop({ type: Types.ObjectId, ref: 'Auth', required: true })
-	driverId: string;
+	userId: mongoose.ObjectId;
 
-	@Prop({})
-	vehicleId: string;
+	@Prop({ type:Types.ObjectId, ref: 'Vehicle'})
+	vehicleId: Vehicle;
 
 	@Prop()
 	panNumber:string
@@ -34,10 +36,7 @@ export class Driver {
 	aadhaarBackUrl: string;
 
 
-	@Prop({ required: true, default: true })
-	IsPhoneNumberVerified: boolean;
-
-	@Prop({ required: true, default: true })
+	@Prop({ required: true, default: false })
 	IsEmailVerified: boolean;
 
 	@Prop({ default: VerficationSTATUS.PENDING, enum: VerficationSTATUS })
@@ -48,6 +47,6 @@ export class Driver {
 }
 
 export const DriverSchema = SchemaFactory.createForClass(Driver);
-export type DriverDocument = HydratedDocument<Driver>
+export type DriverDocument = mongoose.HydratedDocument<Driver>
 
 

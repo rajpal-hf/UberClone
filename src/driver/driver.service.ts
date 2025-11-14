@@ -1,7 +1,7 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Driver, DriverDocument } from './schema/driver.schema';
-import { Model, ObjectId } from 'mongoose';
+import mongoose, { Model, ObjectId, Types } from 'mongoose';
 import { FileUploadService } from 'src/file-upload/file-upload.service';
 import { CreateDriverProfileDto } from './dto/driver.dto';
 import { error } from 'console';
@@ -16,126 +16,107 @@ export class DriverService {
 		private readonly fileUploadService : FileUploadService
 	) { }
 
-	async createDriver(id: ObjectId, dto: CreateDriverProfileDto) {
-		const {
-			licenseNumber,
-			panNumber,
-			licensePhoto,
-			aadhaarNumber,
-			aadhaarFront,
-			aadhaarBack,
-			vehicleId,
-		} = dto;
-		const driverId = id;
 
-		console.log('Driver ID:', driverId);
-		console.log('License Number:', licenseNumber);
-		console.log('PAN Number:', panNumber);
-		console.log('License Photo:', licensePhoto);
-		console.log('Aadhaar Number:', aadhaarNumber);
-		console.log('Aadhaar Front:', aadhaarFront);
-		console.log('Aadhaar Back:', aadhaarBack);
-		console.log('Vehicle ID:', vehicleId);
+async createDriver(id: string, dto: CreateDriverProfileDto) {
+	const {
+		licenseNumber,
+		panNumber,
+		licensePhoto,
+		aadhaarNumber,
+		aadhaarFront,
+		aadhaarBack,
+	} = dto;
 
-		try {
-			//  Validate required fields
-			if (
-				!licenseNumber ||
-				!panNumber ||
-				!licensePhoto ||
-				!aadhaarNumber ||
-				!aadhaarFront ||
-				!aadhaarBack ||
-				!vehicleId
-			) {
-				throw new HttpException('All fields are required', 400);
-			}
+	try {
+		if (
+			!licenseNumber ||
+			!panNumber ||
+			!licensePhoto ||
+			!aadhaarNumber ||
+			!aadhaarFront ||
+			!aadhaarBack
+		) {
+			throw new HttpException('All fields are required', 400);
+		}
 
-			// Check if this driver already has a profile
+		
+		if (!mongoose.Types.ObjectId.isValid(id)) {
+			throw new HttpException('Invalid ObjectId format', 400);
+		}
 
-			const existingProfile = await this.driverModel.findOne({ driverId });
-			if (existingProfile) {
-				throw new HttpException('Driver profile already exists', 409);
-			}
+		const userId = new Types.ObjectId(id); // Convert to ObjectId
 
-			// ✅ 3. Prevent duplicate Aadhaar or License globally
-			const duplicateLicense = await this.driverModel.findOne({ licenseNumber });
-			if (duplicateLicense) {
-				throw new HttpException(
-					`License number "${licenseNumber}" is already registered`,
-					409,
-				);
-			}
+		// Check if this driver already has a profile
+		const existingProfile = await this.driverModel.findOne({ userId });
+		if (existingProfile) {
+			throw new HttpException('Driver profile already exists', 409);
+		}
 
-			const duplicateAadhaar = await this.driverModel.findOne({
-				aadhaarNumber,
-			});
-			if (duplicateAadhaar) {
-				throw new HttpException(
-					`Aadhaar number "${aadhaarNumber}" is already registered`,
-					409,
-				);
-			}
-
-			// Validate format of PAN, Aadhaar, License numbers
-			const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
-			const aadhaarRegex = /^[0-9]{12}$/;
-			if (!panRegex.test(panNumber)) {
-				throw new HttpException('Invalid PAN number format', 400);
-			}
-			if (!aadhaarRegex.test(aadhaarNumber)) {
-				throw new HttpException('Invalid Aadhaar number format', 400);
-			}
-
-			//  Optional: Check if vehicle is already assigned to another driver
-			const vehicleAlreadyAssigned = await this.driverModel.findOne({
-				vehicleId,
-			});
-			if (vehicleAlreadyAssigned) {
-				throw new HttpException(
-					'This vehicle is already assigned to another driver',
-					409,
-				);
-			}
-
-			// Create new driver record
-			const newDriver = new this.driverModel({
-				driverId,
-				licenseNumber,
-				panNumber,
-				licensePhotoUrl: licensePhoto,
-				aadhaarNumber,
-				aadhaarFrontUrl:aadhaarFront,
-				aadhaarBackUrl:aadhaarBack,
-				vehicleId,
-			});
-
-			const savedDriver = await newDriver.save();
-
-			return {
-				message: 'Driver profile created successfully',
-				data: savedDriver,
-			};
-		} catch (error) {
-			console.error('Error creating driver:', error);
-
-			if (error instanceof HttpException) throw error;
-
-			// Handle MongoDB validation or duplicate key errors
-			if (error.code === 11000) {
-				const duplicateField = Object.keys(error.keyValue)[0];
-				throw new HttpException(
-					`Duplicate value for field: ${duplicateField}`,
-					409,
-				);
-			}
-
+		// Prevent duplicate Aadhaar or License globally
+		const duplicateLicense = await this.driverModel.findOne({ licenseNumber });
+		if (duplicateLicense) {
 			throw new HttpException(
-				error.message || 'Something went wrong while creating the driver profile',
-				500,
+				`License number "${licenseNumber}" is already registered`,
+				409,
 			);
 		}
+
+		const duplicateAadhaar = await this.driverModel.findOne({ aadhaarNumber });
+		if (duplicateAadhaar) {
+			throw new HttpException(
+				`Aadhaar number "${aadhaarNumber}" is already registered`,
+				409,
+			);
+		}
+
+		// Validate format of PAN, Aadhaar, License numbers
+		const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+		const aadhaarRegex = /^[0-9]{12}$/;
+		if (!panRegex.test(panNumber)) {
+			throw new HttpException('Invalid PAN number format', 400);
+		}
+		if (!aadhaarRegex.test(aadhaarNumber)) {
+			throw new HttpException('Invalid Aadhaar number format', 400);
+		}
+
+		// Create new driver record
+		const newDriver = new this.driverModel({
+			userId,
+			licenseNumber,
+			panNumber,
+			licensePhotoUrl: licensePhoto,
+			aadhaarNumber,
+			aadhaarFrontUrl: aadhaarFront,
+			aadhaarBackUrl: aadhaarBack,
+		});
+
+		const savedDriver = await newDriver.save();
+
+		return {
+			message: 'Driver profile created successfully',
+			data: savedDriver,
+		};
+	} catch (error) {
+		console.error('Error creating driver:', error);
+
+		if (error instanceof HttpException) throw error;
+
+		// Handle MongoDB validation or duplicate key errors
+		if (error.code === 11000) {
+			const duplicateField = Object.keys(error.keyValue)[0];
+			throw new HttpException(
+				`Duplicate value for field: ${duplicateField}`,
+				409,
+			);
+		}
+
+		throw new HttpException(
+			error.message || 'Something went wrong while creating the driver profile',
+			500,
+		);
 	}
+}
+
 
 	async changeStatusForTrip(id: ObjectId) {
 		try {
@@ -148,7 +129,7 @@ export class DriverService {
 			}
 
 		
-			const user = await this.authModel.findById(driver.driverId);
+			const user = await this.authModel.findById(driver.userId);
 			if (!user) {
 				throw new HttpException('Associated user not found', 404);
 			}
@@ -176,6 +157,25 @@ export class DriverService {
 				: new HttpException('Internal Server Error', 500);
 		}
 	}
+
+
+
+
+	async updateProfile(id: string) {
+		try {
+			const driver = await this.authModel.findById(id);
+			if (!driver) {
+				throw new HttpException('Driver not found', 404);
+			}
+
+		}
+		catch {
+			
+		}
+
+
+	}
+
 
 
 

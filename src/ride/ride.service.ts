@@ -1,28 +1,251 @@
 // ride.service.ts
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { Ride } from './schema/ride.schema';
-import { CreateRideDto } from './dto/ride.dto';
-import { calculateFare } from 'src/utils/fair-calculate';
+import { Model, ObjectId } from 'mongoose';
+import { Ride, RideDocument } from './schema/ride.schema';
+import {  CreateRideDto } from './dto/ride.dto';
+import { Auth, AuthDocument } from 'src/auth/schema/auth.schema';
+import { RideCancelBy, UserRole } from 'src/common/constants';
+import { Driver, DriverDocument } from 'src/driver/schema/driver.schema';
+
 
 @Injectable()
 export class RideService {
-	constructor(@InjectModel(Ride.name) private rideModel: Model<Ride>) { }
+	constructor(
+		@InjectModel(Ride.name) private rideModel: Model<RideDocument>,
+		@InjectModel(Auth.name) private authModel: Model<AuthDocument>,
+		@InjectModel(Driver.name) private driverModel: Model<DriverDocument>,
+	) { }
 
-	async createRide(dto: CreateRideDto) {
+	async createRide(dto: CreateRideDto, id: ObjectId) {
 		
 
-		// Kya hi kar sakta hu isme 
-		const ride = new this.rideModel(dto);
-		
-		return ride.save();
+	
+		// kya ride hai ?
+		try {
+			const existingRide = await this.rideModel.findOne({
+				riderId: id,
+				rideStatus: { $in: ['pending', 'accepted', 'in_progress'] },  // in teeno mae se - ya wo car mae hai - ya bahar wait kr rha hoga
+			});
+
+
+			if (existingRide) {
+				throw new HttpException('User already has an active ride.', 400);
+			}
+
+			// 2. Create and save a new ride
+			const ride = await this.rideModel.create({
+				...dto,
+				riderId : id,
+				status: 'pending',
+				createdAt: new Date(),
+			});
+
+			return {
+				success: true,
+				ride
+			}
+
+		} catch (error) {
+			console.log(error)
+			throw error instanceof HttpException ? error : new HttpException("Internal Server Error - creating ride", 500) 
+		}
 	}
 
-	// async acceptRide(rideId: string, driverId: string) {
+
+
+	async getRides(id: string) {
+		// get all rides with status - pending 
+
+		try {
+			const rides = await this.rideModel.find({ id: id, rideStatus: 'pending' })
+			return {
+				success: true,
+				rides
+			}
+		}
+		catch (error) {	
+			console.log(error)
+			throw error instanceof HttpException ? error : new HttpException("Internal Server Error - creating ride", 500)
+		}
+	}
+
+
+	// async acceptRide(rideId: string, dId: string) {
+	// 	try {
+	// 		const ride = await this.rideModel.findOneAndUpdate(
+	// 			{ _id: rideId },
+	// 			{ $set: { userId: dId, rideStatus: 'accepted' } },
+	// 			{ new: true }
+	// 		);
+
+	// 		if (!ride) {
+	// 			throw new HttpException('Ride not found', 404);
+	// 		}
+
+	// 		return {
+	// 			success: true,
+	// 			ride
+	// 		}
+
+	// 	} catch (error) {
+	// 		console.log(error)
+	// 		throw error instanceof HttpException ? error :
+	// 			new HttpException("Internal Server Error - accepting ride", 500	)
+	// 	}
+		
+	// }
+	
+	async acceptRide(rideId: string, dId: string) {
+		try {
+			
+			const ride = await this.rideModel.findOneAndUpdate(
+				{
+					_id: rideId,
+					userId: { $exists: false }, 
+				},
+				[
+					{
+						$set: {
+							userId: dId,
+							rideStatus: {
+								$cond: [
+									{
+										$and: [
+											{
+												$eq: [
+													await this.driverModel
+														.findById(dId)
+														.select('verificationStatusFromAdmin'),
+													true,
+												],
+											},
+										],
+									},
+									'accepted',
+									'$rideStatus',
+								],
+							},
+						},
+					},
+				],
+				{ new: true }
+			);
+
+			if (!ride) {
+				throw new HttpException('Ride not found or driver not verified', 404);
+			}
+
+			return {
+				success: true,
+				ride,
+			};
+		} catch (error) {
+			console.log(error);
+			throw error instanceof HttpException
+				? error
+				: new HttpException('Internal Server Error - accepting ride', 500);
+		}
+	}
+
+
+
+	async startRide(rideId: string, dId: string) {
+		try {
+
+			const ride = await this.rideModel.findOneAndUpdate(
+				{ _id: rideId, userId: dId },	
+				{ $set: { rideStatus: 'in_progress' } },
+				{ new: true }
+			)
+
+			if (!ride) {
+				throw new HttpException('Ride not found', 404);
+			}
+
+			return {
+				success: true,
+				ride
+			}
+
+		} catch (error) {
+			console.log(error)
+			throw error instanceof HttpException ? error :
+				new HttpException("Internal Server Error - accepting ride", 500)
+		}
+
+	}
+
+	async completeRide(rideId: string, dId: string) {
+		try {
+			const ride = await this.rideModel.findOneAndUpdate(
+				{ _id: rideId, userId: dId },
+				{ $set: { rideStatus: 'completed' } },
+				{ new: true }
+			)
+
+			if (!ride) {
+				throw new HttpException('Ride not found', 404);
+			}
+
+			return {
+				success: true,
+				ride
+			}
+
+		} catch (error) {
+			console.log(error)
+			throw error instanceof HttpException ? error :
+				new HttpException("Internal Server Error - accepting ride", 500)
+		}
+
+	}
+
+	async cancelRide(id: string, Uid: ObjectId) {
+		const rideId = id
+		console.log("riderId kya hai ji", rideId)
+		try {
+			const user = await this.authModel.findById(Uid);
+			const userRole = user?.role
+
+			if (!userRole) {
+				throw new HttpException('User not found', 404);
+			}
+
+			if (userRole === UserRole.RIDER) {
+				await this.rideModel.findOneAndUpdate(
+					{ _id: rideId },
+					{ $set: { rideStatus: 'cancelled', userId: null, cancelBy: RideCancelBy.RIDER } },
+
+				);
+			}
+			if (userRole === UserRole.DRIVER) {
+				await this.rideModel.findOneAndUpdate(
+					{ _id: rideId },
+					{ $set: { rideStatus: 'cancelled', userId: Uid, cancelBy: RideCancelBy.DRIVER } },
+
+				);
+			}
+
+			return {
+				success: true,
+				message: "Ride Cancelled"
+			}
+
+
+		}
+		catch (error) {
+			console.log(error)
+			throw error instanceof HttpException ? error : new HttpException("Internal Server Error - creating ride", 500)
+		}
+
+	}
+
+
+	// async acceptRide(rideId: string, userId: string) {
 	// 	const ride = await this.rideModel.findById(rideId);
 	// 	if (!ride) throw new NotFoundException('Ride not found');
-	// 	ride.driverId = driverId;
+	// 	ride.userId = userId;
 	// 	ride.status = 'accepted';
 	// 	ride.startTime = new Date();
 	// 	return ride.save();

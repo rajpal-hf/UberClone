@@ -6,6 +6,7 @@ import {
 	UseGuards,
 	UploadedFiles,
 	UseInterceptors,
+	Patch,
 } from '@nestjs/common';
 import { DriverService } from './driver.service';
 import { CreateDriverProfileDto, StatusDto } from './dto/driver.dto';
@@ -58,9 +59,18 @@ export class DriverController {
 	@ApiBearerAuth()
 	@UseGuards(AuthGuard, RolesGuard)
 	@Roles(UserRole.DRIVER)
-		@Post('change-status')
+	@Post('change-status')
 	changeStatus(@Req() req ) {
 		console.log("-=-=-=-=>",req)
+		return this.driverService.changeStatusForTrip(req.user.id)
+	}
+
+	@ApiBearerAuth()
+	@UseGuards(AuthGuard, RolesGuard)
+	@Roles(UserRole.DRIVER)
+	@Patch('change-status')
+	updateProfile(@Body () dto: StatusDto,@Req() req) {
+		console.log("-=-=-=-=>", req)
 		return this.driverService.changeStatusForTrip(req.user.id)
 	}
 }

@@ -8,7 +8,7 @@ import { VehicleType, VerficationSTATUS } from "src/common/constants";
 @Schema({ timestamps: true })
 export class Vehicle  {
   @Prop({ type: Types.ObjectId, ref: 'Auth', required: true })
-  driverId: string;
+  userId: string;
 
   @Prop({ required: true, enum : VehicleType })
   vehicleType: VehicleType; 

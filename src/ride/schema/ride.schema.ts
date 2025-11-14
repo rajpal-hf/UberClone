@@ -1,14 +1,15 @@
 // ride.schema.ts
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import {  HydratedDocument, Types } from 'mongoose';
+import { RideCancelBy } from 'src/common/constants';
 
 @Schema({ timestamps: true })
 export class Ride  {
 	@Prop({ required :true  , type : Types.ObjectId ,ref : 'Auth' })
 	riderId: string;
 
-	@Prop({ required: true, type: Types.ObjectId, ref: 'Auth' })
-	driverId?: string;
+	@Prop({type: Types.ObjectId, ref: 'Auth' })
+	userId?: string;
 
 	@Prop({ type: Object, required: true })
 	pickupLocation: {
@@ -24,6 +25,14 @@ export class Ride  {
 		address?: string;
 	};
 
+	@Prop({ type: Object, required: true })
+	driverLocation: {
+		lat: number;
+		lng: number;
+		address?: string;
+	};
+
+
 	@Prop({ default: 'pending' })
 	rideStatus: 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled';	
 
@@ -38,6 +47,9 @@ export class Ride  {
 
 	@Prop({ type: Date })
 	endTime?: Date;
+
+	@Prop({ enum: RideCancelBy })
+	cancelBy : RideCancelBy
 }
 
 export type RideDocument = HydratedDocument<Ride>

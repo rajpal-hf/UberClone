@@ -18,9 +18,6 @@ export class Auth {
 	@Prop({required :true , trim : true }) 
 	password : string
 		
-	@Prop({default :null})
-	socketId: string 
-
 	@Prop({ default: UserRole.RIDER })
 	role : UserRole
 	

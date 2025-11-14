@@ -50,8 +50,7 @@ export class UserLoginDto {
 export class SendOtpDto {
 	@ApiProperty()
 	@IsNotEmpty()
-	@IsEmail()
-	email : string
+	otp : string
 }
 export class VerifyNumberDto	 { 
 	@ApiProperty({example : "+91 7973368197"})

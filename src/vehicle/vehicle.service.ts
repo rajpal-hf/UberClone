@@ -1,84 +1,61 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Vehicle, VehicleDocument } from './schema/vehicle.schema';
-import { Model, ObjectId } from 'mongoose';
+import mongoose, { Model, ObjectId, Types } from 'mongoose';
 import { CreateVehicleDto } from './dto/vehicle.dto';
+import { Driver, DriverDocument } from 'src/driver/schema/driver.schema';
 
 @Injectable()
 export class VehicleService {
 	constructor(
 		@InjectModel(Vehicle.name) private readonly vehicleModel: Model<VehicleDocument>,
+		@InjectModel(Driver.name) private readonly driverModel: Model<DriverDocument>,
 	) { }
 
-	async createVehicle(id: ObjectId, dto: CreateVehicleDto) {
+	async createVehicle(id: string, dto: CreateVehicleDto) {
 		const { vehicleType, modelName, color, plateNumber, rcBookUrl } = dto;
-		const driverId = id;
 
-		
+		// Validation
+		if (!mongoose.Types.ObjectId.isValid(id)) {
+			throw new HttpException('Invalid ObjectId format', 400);
+		}
+
+		const userId = new Types.ObjectId(id);
 
 		try {
-			// ✅ Validate required fields
-			if (!driverId || !vehicleType || !modelName || !color || !plateNumber) {
+			// Check for missing fields
+			if (!vehicleType || !modelName || !color || !plateNumber) {
 				throw new HttpException('All fields are required', 400);
 			}
 
-			/*
-			 A driver cannot have two vehicles with the same type
-			 */
-			const existingVehicleByDriverType = await this.vehicleModel.findOne({
-				driverId,
-				vehicleType,
-			});
-		
-		
-			
-			if (existingVehicleByDriverType) {
-				throw new HttpException(
-					`Driver already has a vehicle of type "${vehicleType}"`,
-					409,
-				);
-			}
+			// Use aggregation to check for duplicates in a single query
+			const existingVehicle = await this.vehicleModel.aggregate([
+				{
+					$match: {
+						$or: [
+							{ userId: id, vehicleType },
+							{ plateNumber, vehicleType },
+						],
+					},
+				},
+				{
+					$group: {
+						_id: null,
+						count: { $sum: 1 },
+					},
+				},
+			]);
 
-			/**
-			 * A driver cannot reuse the same plate number,
-			 * even if the vehicle type is different
-			 */
-
-			const sameDriverPlate = await this.vehicleModel.findOne({
-				driverId,
-				plateNumber,
-				vehicleType
-			});
-
-			
-			if (sameDriverPlate) {
-				throw new HttpException(
-					`Driver already owns a vehicle with plate number "${plateNumber}"`,
-					409,
-				);
-			}
-
-			/**
-			 * Allow same plate number for different vehicle types,
-			 * but globally prevent the same (plateNumber + vehicleType) pair
-			 */
-
-			const existingVehicleByPlateAndType = await this.vehicleModel.findOne({
-				plateNumber,
-				vehicleType,
-			});
-
-
-			if (existingVehicleByPlateAndType) {
-				throw new HttpException(
-					`A ${vehicleType} with plate number "${plateNumber}" already exists`,
-					409,
-				);
+			if (existingVehicle.length > 0) {
+				const errorMessage = existingVehicle[0].count > 1
+					? `A ${vehicleType} with plate number "${plateNumber}" already exists`
+					: `Driver already has a vehicle of type "${vehicleType}"`;
+				throw new HttpException(errorMessage, 409);
 			}
 
 			// Create and save the vehicle
 			const newVehicle = new this.vehicleModel({
-				driverId,
+				userId,
 				vehicleType,
 				modelName,
 				color,
@@ -86,13 +63,22 @@ export class VehicleService {
 				rcBookUrl,
 			});
 
-			const savedVehicle = await newVehicle.save();
+			await newVehicle.save();
 
-			return {
+		
+			const newdriver = await this.driverModel.updateOne(
+				{ userId  },
+				{ $set: { vehicleId: newVehicle._id } },
+			);
+
+			return {	
 				message: 'Vehicle created successfully',
-				data: savedVehicle,
+				data: newVehicle,
+				newdriver : newdriver
 			};
 		} catch (error) {
+			console.error('Error creating vehicle:', error);
+
 			if (error instanceof HttpException) throw error;
 
 			throw new HttpException(

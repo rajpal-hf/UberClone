@@ -7,6 +7,7 @@ import {  CreateRideDto } from './dto/ride.dto';
 import { Auth, AuthDocument } from 'src/auth/schema/auth.schema';
 import { RideCancelBy, UserRole } from 'src/common/constants';
 import { Driver, DriverDocument } from 'src/driver/schema/driver.schema';
+import { WebsocketService } from 'src/websocket/websocket.service';
 
 
 @Injectable()
@@ -15,31 +16,30 @@ export class RideService {
 		@InjectModel(Ride.name) private rideModel: Model<RideDocument>,
 		@InjectModel(Auth.name) private authModel: Model<AuthDocument>,
 		@InjectModel(Driver.name) private driverModel: Model<DriverDocument>,
+		private readonly wsService: WebsocketService
 	) { }
 
 	async createRide(dto: CreateRideDto, id: ObjectId) {
-		
-
-	
-		// kya ride hai ?
 		try {
 			const existingRide = await this.rideModel.findOne({
 				riderId: id,
-				rideStatus: { $in: ['pending', 'accepted', 'in_progress'] },  // in teeno mae se - ya wo car mae hai - ya bahar wait kr rha hoga
+				rideStatus: { $in: ['pending', 'accepted', 'in_progress'] },
 			});
-
 
 			if (existingRide) {
 				throw new HttpException('User already has an active ride.', 400);
 			}
 
-			// 2. Create and save a new ride
+
 			const ride = await this.rideModel.create({
 				...dto,
-				riderId : id,
-				status: 'pending',
+				riderId: id,
+				rideStatus: 'pending',
 				createdAt: new Date(),
 			});
+
+		
+			await this.wsService.notifyDriversNearby(dto.pickupLocation, ride);
 
 			return {
 				success: true,
@@ -48,9 +48,11 @@ export class RideService {
 
 		} catch (error) {
 			console.log(error)
-			throw error instanceof HttpException ? error : new HttpException("Internal Server Error - creating ride", 500) 
+			throw error instanceof HttpException ? error :
+				new HttpException("Internal Server Error - creating ride", 500);
 		}
 	}
+
 
 
 
@@ -64,97 +66,68 @@ export class RideService {
 				rides
 			}
 		}
-		catch (error) {	
+		catch (error) {
 			console.log(error)
 			throw error instanceof HttpException ? error : new HttpException("Internal Server Error - creating ride", 500)
 		}
 	}
 
 
-	// async acceptRide(rideId: string, dId: string) {
-	// 	try {
-	// 		const ride = await this.rideModel.findOneAndUpdate(
-	// 			{ _id: rideId },
-	// 			{ $set: { userId: dId, rideStatus: 'accepted' } },
-	// 			{ new: true }
-	// 		);
 
-	// 		if (!ride) {
-	// 			throw new HttpException('Ride not found', 404);
-	// 		}
-
-	// 		return {
-	// 			success: true,
-	// 			ride
-	// 		}
-
-	// 	} catch (error) {
-	// 		console.log(error)
-	// 		throw error instanceof HttpException ? error :
-	// 			new HttpException("Internal Server Error - accepting ride", 500	)
-	// 	}
-		
-	// }
 	
 	async acceptRide(rideId: string, dId: string) {
+
 		try {
-			
+
 			const ride = await this.rideModel.findOneAndUpdate(
 				{
 					_id: rideId,
-					userId: { $exists: false }, 
+					driverId: { $exists: false }
 				},
-				[
-					{
-						$set: {
-							userId: dId,
-							rideStatus: {
-								$cond: [
-									{
-										$and: [
-											{
-												$eq: [
-													await this.driverModel
-														.findById(dId)
-														.select('verificationStatusFromAdmin'),
-													true,
-												],
-											},
-										],
-									},
-									'accepted',
-									'$rideStatus',
-								],
-							},
-						},
-					},
-				],
+				{
+					$set: {
+						driverId: dId,
+						rideStatus: 'accepted'
+					}
+				},
 				{ new: true }
 			);
 
 			if (!ride) {
-				throw new HttpException('Ride not found or driver not verified', 404);
+				throw new HttpException('Ride not found or already taken', 404);
 			}
+
+			this.wsService.sendToUser(
+				ride.riderId.toString(),
+				"ride_accepted",
+				ride
+			);
+
+			// 🔥 Notify all drivers that ride is taken
+			this.wsService.broadcast("ride_taken", { rideId });
 
 			return {
 				success: true,
-				ride,
-			};
+				ride
+			}
+
 		} catch (error) {
-			console.log(error);
-			throw error instanceof HttpException
-				? error
-				: new HttpException('Internal Server Error - accepting ride', 500);
+			console.log(error)
+			throw error instanceof HttpException ? error :
+				new HttpException("Internal Server Error - accepting ride", 500)
 		}
 	}
 
 
 
+
 	async startRide(rideId: string, dId: string) {
+
+		// Make sure rider can only start start ride when he within under 100m
 		try {
 
 			const ride = await this.rideModel.findOneAndUpdate(
-				{ _id: rideId, userId: dId },	
+				{ _id: rideId, userId: dId },
 				{ $set: { rideStatus: 'in_progress' } },
 				{ new: true }
 			)
@@ -241,6 +214,7 @@ export class RideService {
 
 	}
 
+}
 
 	// async acceptRide(rideId: string, userId: string) {
 	// 	const ride = await this.rideModel.findById(rideId);
@@ -286,4 +260,4 @@ export class RideService {
 	// 	const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 	// 	return R * c;
 	// }
-}
+// }

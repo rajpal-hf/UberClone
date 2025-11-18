@@ -2,7 +2,7 @@
 import { Controller, Get, Post, Query, Body, UseGuards } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { DriverActionDto, GetDriversDto, GetUsersDto, VehicleActionDto } from './dto/admin.dto';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from 'src/auth/guard/auth.Guard';
 import { RolesGuard } from 'src/roleGuard/roles.guard';
 import { Roles } from 'src/roleGuard/roles.decorator';

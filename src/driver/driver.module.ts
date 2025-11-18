@@ -7,13 +7,15 @@ import { JwtModule } from '@nestjs/jwt';
 import { FileUploadService } from 'src/file-upload/file-upload.service';
 import { AuthModule } from 'src/auth/auth.module';
 import { Auth, AuthSchema } from 'src/auth/schema/auth.schema';
+import { Ride, RideSchema } from 'src/ride/schema/ride.schema';
 
 @Module({
 	imports: [
 		
 		MongooseModule.forFeature([
 			{ name: Driver.name, schema: DriverSchema },
-			{ name : Auth.name , schema : AuthSchema}
+			{ name : Auth.name , schema : AuthSchema},
+			{ name : Ride.name , schema : RideSchema},
 		]),
 		JwtModule.register({
 				secret: process.env.JWT_SECRET ,

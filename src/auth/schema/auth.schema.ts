@@ -19,7 +19,10 @@ export class Auth {
 	password : string
 		
 	@Prop({ default: UserRole.RIDER })
-	role : UserRole
+	role: UserRole
+	
+	@Prop({ default: null })
+	socketId : string
 	
 }
 

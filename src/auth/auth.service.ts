@@ -140,7 +140,8 @@ export class AuthService implements OnApplicationBootstrap {
         return {
             success: true,
             message: 'Login successful',
-            user,
+						user,
+						role: user.role,
             token,
         };
     } catch (error) {

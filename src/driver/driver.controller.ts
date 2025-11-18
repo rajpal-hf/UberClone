@@ -61,16 +61,26 @@ export class DriverController {
 	@Roles(UserRole.DRIVER)
 	@Post('change-status')
 	changeStatus(@Req() req ) {
-		console.log("-=-=-=-=>",req)
+		
 		return this.driverService.changeStatusForTrip(req.user.id)
 	}
 
 	@ApiBearerAuth()
 	@UseGuards(AuthGuard, RolesGuard)
 	@Roles(UserRole.DRIVER)
-	@Patch('change-status')
-	updateProfile(@Body () dto: StatusDto,@Req() req) {
-		console.log("-=-=-=-=>", req)
-		return this.driverService.changeStatusForTrip(req.user.id)
+	@Patch('get-all-rides')
+	getAllRides(@Req() req) {
+		return this.driverService.getTotalRides(req.user.id)
 	}
+
+
+
+	// @ApiBearerAuth()
+	// @UseGuards(AuthGuard, RolesGuard)
+	// @Roles(UserRole.DRIVER)
+	// @Patch('change-status')
+	// updateProfile(@Body () dto: StatusDto,@Req() req) {
+	// 	console.log("-=-=-=-=>", req)
+	// 	return "Profile Updated"
+	// }
 }

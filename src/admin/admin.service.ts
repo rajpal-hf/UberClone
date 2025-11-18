@@ -43,8 +43,6 @@ export class AdminService {
 		
 	}
 
-	
-
 	//  `````````````````Drivers``````````````
 	async getDriver(page: number, limit: number) {
 

@@ -6,6 +6,8 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Ride, RideSchema } from './schema/ride.schema';
 import { Auth, AuthSchema } from 'src/auth/schema/auth.schema';
 import { Driver, DriverSchema } from 'src/driver/schema/driver.schema';
+import { WebsocketService } from 'src/websocket/websocket.service';
+import { WebsocketGateway } from 'src/websocket/websocket.gateway';
 
 @Module({
 	imports: [
@@ -19,6 +21,8 @@ import { Driver, DriverSchema } from 'src/driver/schema/driver.schema';
 		])
 	],
   controllers: [RideController],
-  providers: [RideService]
+	providers: [RideService, WebsocketService, 
+		WebsocketGateway
+	]
 })
 export class RideModule {}

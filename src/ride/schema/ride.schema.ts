@@ -1,15 +1,16 @@
 // ride.schema.ts
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import {  HydratedDocument, Types } from 'mongoose';
+import mongoose, {  HydratedDocument, Types } from 'mongoose';
+import { Auth } from 'src/auth/schema/auth.schema';
 import { RideCancelBy } from 'src/common/constants';
 
 @Schema({ timestamps: true })
 export class Ride  {
 	@Prop({ required :true  , type : Types.ObjectId ,ref : 'Auth' })
-	riderId: string;
+	riderId: mongoose.ObjectId;
 
 	@Prop({type: Types.ObjectId, ref: 'Auth' })
-	userId?: string;
+	driverId?: Auth;
 
 	@Prop({ type: Object, required: true })
 	pickupLocation: {

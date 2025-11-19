@@ -6,7 +6,7 @@ import { FileUploadService } from 'src/file-upload/file-upload.service';
 import { CreateDriverProfileDto } from './dto/driver.dto';
 import { error } from 'console';
 import { Auth, AuthDocument } from 'src/auth/schema/auth.schema';
-import { DriverStatus } from 'src/common/constants';
+import { DriverStatus, VerficationSTATUS } from 'src/common/constants';
 import { Ride, RideDocument } from 'src/ride/schema/ride.schema';
 
 @Injectable()
@@ -189,22 +189,54 @@ async createDriver(id: string, dto: CreateDriverProfileDto) {
 	}
 
 
-	async updateProfile(id: string) {
+	async updateProfile(uId: string, dto: any) {
 		try {
-			const driver = await this.authModel.findById(id);
-			if (!driver) {
-				throw new HttpException('Driver not found', 404);
+			const id = new Types.ObjectId(uId);
+
+			const authUser = await this.authModel.findById(id);
+			if (!authUser) {
+				throw new HttpException('Driver (auth user) not found', 404);
 			}
 
-		}
-		catch {
+			const driver = await this.driverModel.findOne({ userId: id });
+			if (!driver) {
+				throw new HttpException('Driver profile not found', 404);
+			}
+
 			
+			const allowedFields = [
+				'panNumber',
+				'licenseNumber',
+				'licensePhotoUrl',
+				'aadhaarNumber',
+				'aadhaarFrontUrl',
+				'aadhaarBackUrl',
+				'vehicleId',
+				'profileUpdateReason',
+			];
+
+	
+			Object.keys(dto).forEach((key) => {
+				if (allowedFields.includes(key)) {
+					driver[key] = dto[key];
+				}
+			});
+			driver.verificationStatusFromAdmin = VerficationSTATUS.PENDING;
+
+			await driver.save();
+
+			return {
+				message: 'Driver profile updated successfully. Waiting for admin verification.',
+				driver,
+			};
+
+		} catch (err) {
+			throw new HttpException(
+				err.message || 'Something went wrong during driver update',
+				err.status || 500
+			);
 		}
-
-
 	}
-
-
 
 
 }

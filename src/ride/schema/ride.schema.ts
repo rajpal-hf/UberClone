@@ -26,13 +26,12 @@ export class Ride  {
 		address?: string;
 	};
 
-	@Prop({ type: Object, required: true })
+	@Prop({ type: Object})
 	driverLocation: {
 		lat: number;
 		lng: number;
 		address?: string;
 	};
-
 
 	@Prop({ default: 'pending' })
 	rideStatus: 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled';	

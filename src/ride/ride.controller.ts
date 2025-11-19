@@ -1,4 +1,5 @@
 // ride.controller.ts
+
 import { Body, Controller, Get, Param, Patch, Post, Put, Req, UseGuards } from '@nestjs/common';
 import { RideService } from './ride.service';
 import {  CreateRideDto, RideParamDto } from './dto/ride.dto';
@@ -7,7 +8,6 @@ import { RolesGuard } from 'src/roleGuard/roles.guard';
 import { Roles } from 'src/roleGuard/roles.decorator';
 import { UserRole } from 'src/common/constants';
 import { ApiBearerAuth } from '@nestjs/swagger';
-import Api from 'twilio/lib/rest/Api';
 
 @Controller('ride')
 export class RideController {
@@ -29,6 +29,7 @@ export class RideController {
 		return this.rideService.cancelRide(params.id, req.user.id);
 	}
 
+	
 	@ApiBearerAuth()
 	@UseGuards(AuthGuard, RolesGuard)
 	@Roles(UserRole.DRIVER)
@@ -36,27 +37,24 @@ export class RideController {
 	acceptRide(@Param() params: RideParamDto, @Req() req: any) {
 		return this.rideService.acceptRide(params.id , req.user.id)
 	 }
+	@ApiBearerAuth()
+	@UseGuards(AuthGuard, RolesGuard)
+	@Roles(UserRole.DRIVER)
+	@Patch(':id/start')
+	startRide(@Param() params: RideParamDto, @Req() req: any) {
+		return this.rideService.startRide(params.id , req.user.id)
+	 }
+	@ApiBearerAuth()
+	@UseGuards(AuthGuard, RolesGuard)
+	@Roles(UserRole.DRIVER)
+	@Patch(':id/complete')
+	completeRide(@Param() params: RideParamDto, @Req() req: any) {
+		return this.rideService.completeRide(params.id , req.user.id)
+	 }
 
 
 
 
 
-	// @UseGuards(AuthGuard,RolesGuard)
-	// 	@Roles(UserRole.DRIVER)
-	// @Put(':id/accept')
-	// acceptRide(@Param('id') id: string, @Req() req ) {
-	// 	return this.rideService.acceptRide(id, req.user.id);
-	// }
 
-	// // Complete ride
-	// @Put(':id/complete')
-	// completeRide(@Param('id') id: string) {
-	// 	return this.rideService.completeRide(id);
-	// }
-
-	// // Get ride details
-	// @Get(':id')
-	// getRide(@Param('id') id: string) {
-	// 	return this.rideService.getRide(id);
-	// }
 }

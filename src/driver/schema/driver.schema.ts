@@ -35,9 +35,9 @@ export class Driver {
 	@Prop()
 	aadhaarBackUrl: string;
 
+	@Prop()
+	profileUpdateReason: string;
 
-	@Prop({ required: true, default: false })
-	IsEmailVerified: boolean;
 
 	@Prop({ default: VerficationSTATUS.PENDING, enum: VerficationSTATUS })
 	verificationStatusFromAdmin: VerficationSTATUS;		
@@ -48,5 +48,3 @@ export class Driver {
 
 export const DriverSchema = SchemaFactory.createForClass(Driver);
 export type DriverDocument = mongoose.HydratedDocument<Driver>
-
-

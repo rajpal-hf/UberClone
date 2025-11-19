@@ -1,7 +1,7 @@
 // ride.service.ts
 import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, ObjectId } from 'mongoose';
+import { Model, ObjectId, Types } from 'mongoose';
 import { Ride, RideDocument } from './schema/ride.schema';
 import {  CreateRideDto } from './dto/ride.dto';
 import { Auth, AuthDocument } from 'src/auth/schema/auth.schema';
@@ -19,8 +19,15 @@ export class RideService {
 		private readonly wsService: WebsocketService
 	) { }
 
-	async createRide(dto: CreateRideDto, id: ObjectId) {
+
+	async createRide(dto: CreateRideDto, rid: string) {
+
+		console.log("check 2")
+
+		const id = new Types.ObjectId(rid);
+
 		try {
+
 			const existingRide = await this.rideModel.findOne({
 				riderId: id,
 				rideStatus: { $in: ['pending', 'accepted', 'in_progress'] },
@@ -38,8 +45,9 @@ export class RideService {
 				createdAt: new Date(),
 			});
 
-		
-			await this.wsService.notifyDriversNearby(dto.pickupLocation, ride);
+		// here is error
+			await this.wsService.(dto.pickupLocation, ride);
+
 
 			return {
 				success: true,
@@ -57,8 +65,6 @@ export class RideService {
 
 
 	async getRides(id: string) {
-		// get all rides with status - pending 
-
 		try {
 			const rides = await this.rideModel.find({ id: id, rideStatus: 'pending' })
 			return {
@@ -97,6 +103,8 @@ export class RideService {
 				throw new HttpException('Ride not found or already taken', 404);
 			}
 
+
+			// here is error
 			this.wsService.sendToUser(
 				ride.riderId.toString(),
 				"ride_accepted",
@@ -120,34 +128,83 @@ export class RideService {
 
 
 
+	private getDistanceInMeters(lat1, lon1, lat2, lon2) {
+	const R = 6371000; // radius of Earth in meters
+	const toRad = (value) => (value * Math.PI) / 180;
+
+	const dLat = toRad(lat2 - lat1);
+	const dLon = toRad(lon2 - lon1);
+
+	const a =
+		Math.sin(dLat / 2) ** 2 +
+		Math.cos(toRad(lat1)) *
+		Math.cos(toRad(lat2)) *
+		Math.sin(dLon / 2) ** 2;
+
+	const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+	return R * c; 
+}
 
 	async startRide(rideId: string, dId: string) {
-
-		// Make sure rider can only start start ride when he within under 100m
 		try {
+			// Fetch ride + driver location
+			const id = new Types.ObjectId(rideId)	
+			const ride = await this.rideModel.findById(rideId);
+			if (!ride) throw new HttpException("Ride not found", 404);
 
-			const ride = await this.rideModel.findOneAndUpdate(
-				{ _id: rideId, userId: dId },
-				{ $set: { rideStatus: 'in_progress' } },
-				{ new: true }
-			)
+			const driver = await this.driverModel.findById(dId);
+			if (!driver) throw new HttpException("Driver not found", 404);
 
-			if (!ride) {
-				throw new HttpException('Ride not found', 404);
+			// pickup coordinates from ride
+
+			const pickupLat = ride.pickupLocation.lat;
+			const pickupLng = ride.pickupLocation.lng;
+			
+
+			// driver live location
+
+			const driverLat = ride.driverLocation.lat
+			const driverLng = ride.driverLocation.lng
+			// const { lat: driverLat, lng: driverLng } = driver.currentLocation;
+
+			// calculate distance
+			const distance = this.getDistanceInMeters(
+				driverLat,
+				driverLng,
+				pickupLat,
+				pickupLng
+			);
+
+			// check threshold
+			if (distance > 100) {
+				throw new HttpException(
+					`Driver is too far from pickup location: ${Math.round(distance)}m`,
+					400
+				);
 			}
+
+			// update ride status
+			const updatedRide = await this.rideModel.findOneAndUpdate(
+				{ _id: rideId, userId: dId },
+				{ $set: { rideStatus: "in_progress" } },
+				{ new: true }
+			);
 
 			return {
 				success: true,
-				ride
-			}
+				ride: updatedRide
+			};
 
 		} catch (error) {
-			console.log(error)
-			throw error instanceof HttpException ? error :
-				new HttpException("Internal Server Error - accepting ride", 500)
+			console.log(error);
+			throw error instanceof HttpException
+				? error
+				: new HttpException("Internal Server Error - starting ride", 500);
 		}
-
 	}
+
+	
 
 	async completeRide(rideId: string, dId: string) {
 		try {
@@ -171,10 +228,9 @@ export class RideService {
 			throw error instanceof HttpException ? error :
 				new HttpException("Internal Server Error - accepting ride", 500)
 		}
-
 	}
 
-	async cancelRide(id: string, Uid: ObjectId) {
+	async 	cancelRide(id: string, Uid: ObjectId) {
 		const rideId = id
 		console.log("riderId kya hai ji", rideId)
 		try {
@@ -204,8 +260,6 @@ export class RideService {
 				success: true,
 				message: "Ride Cancelled"
 			}
-
-
 		}
 		catch (error) {
 			console.log(error)
@@ -216,48 +270,5 @@ export class RideService {
 
 }
 
-	// async acceptRide(rideId: string, userId: string) {
-	// 	const ride = await this.rideModel.findById(rideId);
-	// 	if (!ride) throw new NotFoundException('Ride not found');
-	// 	ride.userId = userId;
-	// 	ride.status = 'accepted';
-	// 	ride.startTime = new Date();
-	// 	return ride.save();
-	// }
-
-	// async completeRide(rideId: string) {
-	// 	const ride = await this.rideModel.findById(rideId);
-	// 	if (!ride) throw new NotFoundException('Ride not found');
-
-	// 	ride.endTime = new Date();
-	// 	ride.status = 'completed';
 
 
-	// 	const distance = await this.calculateDistance(
-	// 		ride.pickupLocation,
-	// 		ride.dropoffLocation
-	// 	);
-	// 	ride.distance = distance;
-	// 	ride.fare = calculateFare(distance);
-
-	// 	return ride.save();
-	// }
-
-	// async getRide(id: string) {
-	// 	return this.rideModel.findById(id);
-	// }
-
-	// private async calculateDistance(pickup, dropoff): Promise<number> {
-	// 	const R = 6371; 
-	// 	const dLat = ((dropoff.lat - pickup.lat) * Math.PI) / 180;
-	// 	const dLng = ((dropoff.lng - pickup.lng) * Math.PI) / 180;
-	// 	const a =
-	// 		Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-	// 		Math.cos((pickup.lat * Math.PI) / 180) *
-	// 		Math.cos((dropoff.lat * Math.PI) / 180) *
-	// 		Math.sin(dLng / 2) *
-	// 		Math.sin(dLng / 2);
-	// 	const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-	// 	return R * c;
-	// }
-// }

@@ -138,7 +138,8 @@ export class AuthService implements OnApplicationBootstrap {
         user.password = '-----';
 
         return {
-            success: true,
+					success: true,
+						
             message: 'Login successful',
 						user,
 						role: user.role,

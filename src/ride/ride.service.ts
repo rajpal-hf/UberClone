@@ -22,7 +22,6 @@ export class RideService {
 
 	async createRide(dto: CreateRideDto, rid: string) {
 
-		console.log("check 2")
 
 		const id = new Types.ObjectId(rid);
 
@@ -46,7 +45,7 @@ export class RideService {
 			});
 
 		// here is error
-			await this.wsService.(dto.pickupLocation, ride);
+			await this.wsService.broadcastNewRide(ride);
 
 
 			return {
@@ -82,17 +81,19 @@ export class RideService {
 
 	
 	async acceptRide(rideId: string, dId: string) {
-
 		try {
-
 			const ride = await this.rideModel.findOneAndUpdate(
 				{
 					_id: rideId,
-					driverId: { $exists: false }
+					rideStatus: "pending",
+					$or: [
+						{ driverId: { $exists: false } },
+						{ driverId: null }
+					]
 				},
 				{
 					$set: {
-						driverId: dId,
+						driverId: new Types.ObjectId(dId),
 						rideStatus: 'accepted'
 					}
 				},
@@ -103,24 +104,18 @@ export class RideService {
 				throw new HttpException('Ride not found or already taken', 404);
 			}
 
+			// use wsService.sendTo to notify the rider
+			this.wsService.sendTo(ride.riderId.toString(), "ride_accepted", ride);
 
-			// here is error
-			this.wsService.sendToUser(
-				ride.riderId.toString(),
-				"ride_accepted",
-				ride
-			);
-
-			// 🔥 Notify all drivers that ride is taken
+			// Notify all drivers (optional) that ride is taken
 			this.wsService.broadcast("ride_taken", { rideId });
 
 			return {
 				success: true,
 				ride
-			}
-
+			};
 		} catch (error) {
-			console.log(error)
+			console.log(error);
 			throw error instanceof HttpException ? error :
 				new HttpException("Internal Server Error - accepting ride", 500)
 		}
@@ -128,7 +123,7 @@ export class RideService {
 
 
 
-	private getDistanceInMeters(lat1, lon1, lat2, lon2) {
+	private getDistanceInMeters(lat1 , lon1, lat2, lon2) {
 	const R = 6371000; // radius of Earth in meters
 	const toRad = (value) => (value * Math.PI) / 180;
 
@@ -166,9 +161,7 @@ export class RideService {
 
 			const driverLat = ride.driverLocation.lat
 			const driverLng = ride.driverLocation.lng
-			// const { lat: driverLat, lng: driverLng } = driver.currentLocation;
-
-			// calculate distance
+			
 			const distance = this.getDistanceInMeters(
 				driverLat,
 				driverLng,
@@ -267,8 +260,21 @@ export class RideService {
 		}
 
 	}
+	
+	
+	async getDriverForRide(rideId: string) {
+	try {
+		const driver = await this.rideModel.findOne({ _id: rideId }).select('driverId -_id');
+		// return driver.driverId;
+	}
+	catch (error) {
+		console.log(error)
+		throw error instanceof HttpException ? error : new HttpException("Internal Server Error - getting driver for ride", 500)		
+	}
+}
 
 }
+
 
 
 

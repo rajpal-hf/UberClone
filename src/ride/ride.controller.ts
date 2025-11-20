@@ -19,42 +19,48 @@ export class RideController {
 	@Roles(UserRole.RIDER)
 	@Post('request')
 	createRide(@Body() dto: CreateRideDto, @Req() req: any) {
+		console.log(req.user.id, "req.user.id  haleluiyaaaaaa")
+	
 		return this.rideService.createRide(dto, req.user.id);
 	}
-
-	@ApiBearerAuth()
-	@UseGuards(AuthGuard)
-	@Put(':id/cancel')
-	cancelRide(@Param() params: RideParamDto, @Req() req: any) {
-		return this.rideService.cancelRide(params.id, req.user.id);
-	}
-
 	
 	@ApiBearerAuth()
 	@UseGuards(AuthGuard, RolesGuard)
 	@Roles(UserRole.DRIVER)
-	@Patch(':id/accept')
+	@Patch('accept/:id')
 	acceptRide(@Param() params: RideParamDto, @Req() req: any) {
+		console.log(req.user.id, "req.user.id")
+
+		console.log("yhaaaaa pe aya hu kyaaa")
 		return this.rideService.acceptRide(params.id , req.user.id)
-	 }
+	}
+	
+
 	@ApiBearerAuth()
 	@UseGuards(AuthGuard, RolesGuard)
 	@Roles(UserRole.DRIVER)
-	@Patch(':id/start')
+	@Patch('start/:id')
 	startRide(@Param() params: RideParamDto, @Req() req: any) {
 		return this.rideService.startRide(params.id , req.user.id)
-	 }
+	}
+	
 	@ApiBearerAuth()
 	@UseGuards(AuthGuard, RolesGuard)
 	@Roles(UserRole.DRIVER)
-	@Patch(':id/complete')
+	@Patch('complete/:id')
 	completeRide(@Param() params: RideParamDto, @Req() req: any) {
 		return this.rideService.completeRide(params.id , req.user.id)
-	 }
+	}
 
-
-
-
-
+	@ApiBearerAuth()
+	@UseGuards(AuthGuard)
+	@Patch('cancel/:id')
+	cancelRide(@Param() params: RideParamDto, @Req() req: any) {
+		return this.rideService.cancelRide(params.id, req.user.id);
+	}
+	
+	getDriverForRide(@Param() params: RideParamDto) {
+		return this.rideService.getDriverForRide(params.id)
+	}
 
 }

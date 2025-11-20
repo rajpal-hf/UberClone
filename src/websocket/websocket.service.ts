@@ -6,6 +6,7 @@ import { Model } from "mongoose";
 import { Auth } from "src/auth/schema/auth.schema";
 import { Driver } from "src/driver/schema/driver.schema";
 import { Ride } from "src/ride/schema/ride.schema";
+import { DriverStatus } from "src/common/constants";
 
 @Injectable()
 export class WebsocketService {
@@ -28,47 +29,68 @@ export class WebsocketService {
 
 	async registerClient(userId: string, role: string, socket: WebSocket) {
 		this.clients.set(userId, socket);
-
 		await this.authModel.findByIdAndUpdate(userId, { isOnline: true });
+		console.log("Registered WS client", userId);
+	}
+
+
+	sendToUser(userId: string, event: string, data: any) {
+		return this.sendTo(userId, event, data);
 	}
 
 	sendTo(userId: string, event: string, data: any) {
 		const socket = this.clients.get(userId);
-		if (!socket) return;
-
-		socket.send(JSON.stringify({ event, data }));
+		if (!socket) {
+			console.log("sendTo: socket not found for user", userId);
+			return;
+		}
+		try {
+			socket.send(JSON.stringify({ event, data }));
+		} catch (err) {
+			console.log("WS send error to", userId, err);
+		}
 	}
 
 	broadcast(event: string, data: any) {
 		for (const socket of this.clients.values()) {
-			socket.send(JSON.stringify({ event, data }));
+			try {
+				socket.send(JSON.stringify({ event, data }));
+			} catch (err) {
+				console.log("broadcast send error", err);
+			}
 		}
-	}
-
-	getRideById(id: string) {
-		return this.rideModel.findById(id);
 	}
 
 	// NEW RIDE → SEND TO ONLINE DRIVERS
 	async broadcastNewRide(ride: any) {
-		const drivers = await this.driverModel.find({ status: "online" });
+		const drivers = await this.driverModel.find({ status: DriverStatus.ONLINE });
+		
+
+		console.log(`Found ${drivers.length} online drivers`);
 
 		for (const driver of drivers) {
+			console.log("driver.userId.toString()", driver.userId.toString());
+			// console.log("driver.userId", driver.userId);
 			const socket = this.clients.get(driver.userId.toString());
+			// console.log("socket", socket);
+
 			if (!socket) continue;
 
-			socket.send(JSON.stringify({
-				event: "new_ride",
-				data: {
-					rideId: ride._id,
-					pickupLocation: ride.pickupLocation,
-					dropoffLocation: ride.dropoffLocation,
-					distance: ride.distance,
-					fare: ride.fare,
-				}
-			}));
-			console.log(`Broadcasted new ride to driver ${driver.userId}`);
-			console.log(`Broadcasted new ride to ${drivers.length} drivers`);
+			try {
+				socket.send(JSON.stringify({
+					event: "new_ride",
+					data: {
+						rideId: ride._id,
+						pickupLocation: ride.pickupLocation,
+						dropoffLocation: ride.dropoffLocation,
+						distance: ride.distance,
+						fare: ride.fare,
+					}
+				}));
+				console.log(`Broadcasted new ride to driver ${driver.userId}`);
+			} catch (err) {
+				console.log("Error sending new_ride to driver", driver.userId, err);
+			}
 		}
 	}
 

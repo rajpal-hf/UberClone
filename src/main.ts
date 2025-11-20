@@ -3,9 +3,11 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { WsAdapter } from '@nestjs/platform-ws';
+import  cookieParser from 'cookie-parser'
 
 async function bootstrap() {
 	const app = await NestFactory.create(AppModule);
+	app.use(cookieParser())
 	
 	app.enableCors({
 		origin: 'http://localhost:5173',
@@ -16,6 +18,8 @@ async function bootstrap() {
 		whitelist: true,
 		transform :true
 	}))
+
+	
 
 	app.useWebSocketAdapter(new WsAdapter(app));
 	const config = new DocumentBuilder()

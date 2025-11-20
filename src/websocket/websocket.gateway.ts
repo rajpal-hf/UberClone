@@ -17,7 +17,6 @@ export class WebsocketGateway {
 	// When client connects
 	async handleConnection(client: WebSocket, req: any) {
 		const token = new URL(req.url, "http://localhost").searchParams.get("token");
-
 		const user = await this.wsService.validateToken(token!);
 		if (!user) return client.close();
 
@@ -25,29 +24,16 @@ export class WebsocketGateway {
 		(client as any).role = user.role;
 
 		console.log("WS Connected:", user._id);
-	}
 
-	// REGISTER
-	@SubscribeMessage("register")
-	async register(@ConnectedSocket() client: WebSocket) {
-		const { userId, role } = client as any;
-		await this.wsService.registerClient(userId, role, client);
-
-		client.send(JSON.stringify({ event: "registered", userId }));
-	}
-
-	// Ride created by rider → notify drivers
-	@SubscribeMessage("new_ride")
-	async newRide(@MessageBody() data, @ConnectedSocket() client: WebSocket) {
-		const ride = await this.wsService.getRideById(data.rideId);
-		if (!ride) return;
-
-		await this.wsService.broadcastNewRide(ride);
+		// Automatically register
+		await this.wsService.registerClient(user._id.toString(), user.role, client);
+		client.send(JSON.stringify({ event: "registered", userId: user._id.toString() }));
 	}
 
 	// Driver updates location
 	@SubscribeMessage("driver_location")
 	async driverLocation(@MessageBody() location, @ConnectedSocket() client: WebSocket) {
+		
 		await this.wsService.updateDriverLocation(client, location);
 	}
 

@@ -14,6 +14,7 @@ export class AuthGuard implements CanActivate {
 		}
 
 		const token = authHeader.split(' ')[1] || request.cookies.token;
+		console.log("jinga lala huhu", token);
 
 		try {
 			const decoded = await this.jwtService.verifyAsync(token, {

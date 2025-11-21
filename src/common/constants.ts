@@ -29,3 +29,9 @@ export enum RideCancelBy {
 	DRIVER = "driver",
 	RIDER = "rider"
 }
+
+
+export enum PaymentMethod {
+	ONLINE = "online",
+	OFFLINE = "offline"
+}

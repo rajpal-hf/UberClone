@@ -2,7 +2,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, {  HydratedDocument, Types } from 'mongoose';
 import { Auth } from 'src/auth/schema/auth.schema';
-import { RideCancelBy } from 'src/common/constants';
+import { PaymentMethod, RideCancelBy, VehicleType } from 'src/common/constants';
+import { Vehicle } from 'src/vehicle/schema/vehicle.schema';
 
 @Schema({ timestamps: true })
 export class Ride  {
@@ -11,6 +12,11 @@ export class Ride  {
 
 	@Prop({type: Types.ObjectId, ref: 'Auth' })
 	driverId?: Auth;
+
+	@Prop({ required: true, enum: VehicleType })
+	vehicleType: VehicleType;
+
+
 
 	@Prop({ type: Object, required: true })
 	pickupLocation: {
@@ -32,9 +38,26 @@ export class Ride  {
 		lng: number;
 		address?: string;
 	};
+	@Prop({ type: Object})
+	actualDropoffLocation: {
+		lat: number;
+		lng: number;
+		address?: string;
+	};
 
 	@Prop({ default: 'pending' })
 	rideStatus: 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled';	
+
+	@Prop()
+	pamentMethod?: PaymentMethod; // online/ offline
+
+	@Prop()
+	paymentOrderId?: string
+
+
+	@Prop({ default: "pending" })
+	paymentStatus: "pending" | "paid" | "failed";
+
 
 	@Prop()
 	fare?: number;

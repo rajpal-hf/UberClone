@@ -2,7 +2,7 @@
 
 import { Body, Controller, Get, Param, Patch, Post, Put, Req, UseGuards } from '@nestjs/common';
 import { RideService } from './ride.service';
-import {  CreateRideDto, RideParamDto } from './dto/ride.dto';
+import {  ActualDropoffDto, CreateRideDto, EstimatedFareDto, RideParamDto } from './dto/ride.dto';
 import { AuthGuard } from 'src/auth/guard/auth.Guard';
 import { RolesGuard } from 'src/roleGuard/roles.guard';
 import { Roles } from 'src/roleGuard/roles.decorator';
@@ -29,9 +29,7 @@ export class RideController {
 	@Roles(UserRole.DRIVER)
 	@Patch('accept/:id')
 	acceptRide(@Param() params: RideParamDto, @Req() req: any) {
-		console.log(req.user.id, "req.user.id")
-
-		console.log("yhaaaaa pe aya hu kyaaa")
+		
 		return this.rideService.acceptRide(params.id , req.user.id)
 	}
 	
@@ -41,6 +39,9 @@ export class RideController {
 	@Roles(UserRole.DRIVER)
 	@Patch('start/:id')
 	startRide(@Param() params: RideParamDto, @Req() req: any) {
+		console.log(req.user.id, "req.user.id")
+
+		console.log("yhaaaaa pe aya hu kyaaa")
 		return this.rideService.startRide(params.id , req.user.id)
 	}
 	
@@ -48,8 +49,8 @@ export class RideController {
 	@UseGuards(AuthGuard, RolesGuard)
 	@Roles(UserRole.DRIVER)
 	@Patch('complete/:id')
-	completeRide(@Param() params: RideParamDto, @Req() req: any) {
-		return this.rideService.completeRide(params.id , req.user.id)
+	completeRide(@Param() params: RideParamDto, @Req() req: any , @Body() dto: ActualDropoffDto) {
+		return this.rideService.completeRide(params.id , req.user.id , dto)
 	}
 
 	@ApiBearerAuth()
@@ -58,9 +59,19 @@ export class RideController {
 	cancelRide(@Param() params: RideParamDto, @Req() req: any) {
 		return this.rideService.cancelRide(params.id, req.user.id);
 	}
+
+	@ApiBearerAuth()
+	@UseGuards(AuthGuard)
+	@Patch('ride_estimate')
+	estimatedFare(@Body() dto : EstimatedFareDto) {
+		return this.rideService.estimatedFare(dto);
+	}
 	
-	getDriverForRide(@Param() params: RideParamDto) {
-		return this.rideService.getDriverForRide(params.id)
+	@ApiBearerAuth()
+	@UseGuards(AuthGuard)
+	@Get('driver/:id')
+	getDriverForRide(@Param() params: RideParamDto, @Req() req: any) {
+		return this.rideService.getAcceptedRide(params.id , req.user.id)
 	}
 
 }

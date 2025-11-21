@@ -8,6 +8,8 @@ import { Auth, AuthSchema } from 'src/auth/schema/auth.schema';
 import { Driver, DriverSchema } from 'src/driver/schema/driver.schema';
 import { WebsocketService } from 'src/websocket/websocket.service';
 import { WebsocketGateway } from 'src/websocket/websocket.gateway';
+import { RazorpayService } from 'src/payment/razorpay.service';
+import { Payment, PaymentSchema } from './schema/payment.schema';
 
 @Module({
 	imports: [
@@ -18,11 +20,12 @@ import { WebsocketGateway } from 'src/websocket/websocket.gateway';
 			{ name : Ride.name , schema : RideSchema},
 			{ name : Auth.name , schema : AuthSchema},
 			{ name : Driver.name , schema : DriverSchema},
+			{ name : Payment.name , schema : PaymentSchema},
 		])
 	],
   controllers: [RideController],
 	providers: [RideService, WebsocketService, 
-		WebsocketGateway
+		WebsocketGateway, RazorpayService
 	]
 })
 export class RideModule {}

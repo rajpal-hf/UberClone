@@ -38,7 +38,7 @@ export class CreateUserDto {
 
 
 export class UserLoginDto { 
-	@ApiProperty({ example: "+917973368197" })
+	@ApiProperty({ example: "+918059243582" })
 	@IsNotEmpty()
 	phone: string
 
@@ -53,7 +53,7 @@ export class SendOtpDto {
 	otp : string
 }
 export class VerifyNumberDto	 { 
-	@ApiProperty({example : "+91 7973368197"})
+	@ApiProperty({ example: "+918059243582"})
 	@IsString()
 	@IsNotEmpty()
 	phone : string

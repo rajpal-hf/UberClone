@@ -1,0 +1,261 @@
+[{
+  "_id": {
+    "$oid": "69118bf29ad699ff19f581bc"
+  },
+  "name": "Admin",
+  "email": "admin@gmail.com",
+  "phone": "1234567890",
+  "password": "admin123",
+  "role": "admin",
+  "createdAt": {
+    "$date": "2025-11-10T06:53:38.063Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-10T06:53:38.063Z"
+  },
+  "__v": 0
+},{
+  "_id": {
+    "$oid": "69143ad6eff4e159dcaa4c1a"
+  },
+  "name": "Raj",
+  "email": "pal511105@gmail.com",
+  "phone": "+917973368197",
+  "password": "$2b$10$/hs4n/K7NZsPjQPerrNTUecoRxj5P7Ydp7seVDGEzkDbd/I2xLttS",
+  "socketId": null,
+  "role": "driver",
+  "createdAt": {
+    "$date": "2025-11-12T07:44:22.797Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-20T13:19:55.638Z"
+  },
+  "__v": 0
+},{
+  "_id": {
+    "$oid": "6914794d988b200e44ea4034"
+  },
+  "name": "depanshu",
+  "email": "depansu@gmail.com",
+  "phone": "+918059243582",
+  "password": "$2b$10$bf4d8uDbYXJyNvhZxkbJ0utXrY1AsjvAlRlcD.nP0KI91eY0Ea20G",
+  "socketId": "6914794d988b200e44ea4034",
+  "role": "rider",
+  "createdAt": {
+    "$date": "2025-11-12T12:10:53.160Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-22T05:10:33.923Z"
+  },
+  "__v": 0
+},{
+  "_id": {
+    "$oid": "6916ce9cb36e05d67a603474"
+  },
+  "name": "Rider One",
+  "email": "rider1@example.com",
+  "phone": "7010001001",
+  "password": "$2b$10$m2w4lvNsPXDFAgtFswZHs.dwsnweCd0d6rtIByzFDsMHZNjH.yqVa",
+  "role": "rider",
+  "createdAt": {
+    "$date": "2025-11-14T06:39:24.657Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-14T06:39:24.657Z"
+  },
+  "__v": 0
+},{
+  "_id": {
+    "$oid": "6916cea7b36e05d67a603477"
+  },
+  "name": "Rider Two",
+  "email": "rider2@example.com",
+  "phone": "7010001002",
+  "password": "$2b$10$RCTtUO.emyBsUtAGHMhD1uc5Hq5ZHv.hdCx2/yJJUwYk2T0Gp.0Pa",
+  "role": "rider",
+  "createdAt": {
+    "$date": "2025-11-14T06:39:35.326Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-14T06:39:35.326Z"
+  },
+  "__v": 0
+},{
+  "_id": {
+    "$oid": "6916cf1232bf47e4d079d472"
+  },
+  "name": "Rider Three",
+  "phone": "+917010001003",
+  "email": "rider3@example.com",
+  "password": "1111",
+  "role": "rider",
+  "updatedAt": {
+    "$date": "2025-11-20T04:47:07.902Z"
+  }
+},{
+  "_id": {
+    "$oid": "6916cf1232bf47e4d079d473"
+  },
+  "name": "Rider Four",
+  "phone": "+917010001004",
+  "email": "rider4@example.com",
+  "password": "1111",
+  "role": "rider",
+  "updatedAt": {
+    "$date": "2025-11-20T04:52:11.062Z"
+  }
+},{
+  "_id": {
+    "$oid": "6916cf1232bf47e4d079d474"
+  },
+  "name": "Rider Five",
+  "phone": "7010001005",
+  "email": "rider5@example.com",
+  "password": "1111",
+  "role": "rider"
+},{
+  "_id": {
+    "$oid": "6916cf1232bf47e4d079d475"
+  },
+  "name": "Rider Six",
+  "phone": "+917010001006",
+  "email": "rider6@example.com",
+  "password": "1111",
+  "role": "rider",
+  "socketId": "6916cf1232bf47e4d079d475",
+  "updatedAt": {
+    "$date": "2025-11-19T12:49:46.285Z"
+  }
+},{
+  "_id": {
+    "$oid": "6916cf1232bf47e4d079d476"
+  },
+  "name": "Rider Seven",
+  "phone": "7010001007",
+  "email": "rider7@example.com",
+  "password": "1111",
+  "role": "rider"
+},{
+  "_id": {
+    "$oid": "6916cf1232bf47e4d079d477"
+  },
+  "name": "Rider Eight",
+  "phone": "7010001008",
+  "email": "rider8@example.com",
+  "password": "1111",
+  "role": "rider"
+},{
+  "_id": {
+    "$oid": "6916cf1232bf47e4d079d478"
+  },
+  "name": "Rider Nine",
+  "phone": "7010001009",
+  "email": "rider9@example.com",
+  "password": "1111",
+  "role": "rider"
+},{
+  "_id": {
+    "$oid": "6916cf1232bf47e4d079d479"
+  },
+  "name": "Rider Ten",
+  "phone": "7010001010",
+  "email": "rider10@example.com",
+  "password": "1111",
+  "role": "rider"
+},{
+  "_id": {
+    "$oid": "6916cf3432bf47e4d079d47b"
+  },
+  "name": "Driver One",
+  "phone": "+917020002001",
+  "email": "driver1@example.com",
+  "password": "1111",
+  "role": "driver",
+  "updatedAt": {
+    "$date": "2025-11-20T05:06:40.890Z"
+  }
+},{
+  "_id": {
+    "$oid": "6916cf3432bf47e4d079d47c"
+  },
+  "name": "Driver Two",
+  "phone": "+917020002002",
+  "email": "driver2@example.com",
+  "password": "1111",
+  "role": "driver",
+  "updatedAt": {
+    "$date": "2025-11-20T04:56:43.866Z"
+  }
+},{
+  "_id": {
+    "$oid": "6916cf3432bf47e4d079d47d"
+  },
+  "name": "Driver Three",
+  "phone": "7020002003",
+  "email": "driver3@example.com",
+  "password": "1111",
+  "role": "driver"
+},{
+  "_id": {
+    "$oid": "6916cf3432bf47e4d079d47e"
+  },
+  "name": "Driver Four",
+  "phone": "7020002004",
+  "email": "driver4@example.com",
+  "password": "1111",
+  "role": "driver"
+},{
+  "_id": {
+    "$oid": "6916cf3432bf47e4d079d47f"
+  },
+  "name": "Driver Five",
+  "phone": "7020002005",
+  "email": "driver5@example.com",
+  "password": "1111",
+  "role": "driver"
+},{
+  "_id": {
+    "$oid": "6916cf3432bf47e4d079d480"
+  },
+  "name": "Driver Six",
+  "phone": "7020002006",
+  "email": "driver6@example.com",
+  "password": "1111",
+  "role": "driver"
+},{
+  "_id": {
+    "$oid": "6916cf3432bf47e4d079d481"
+  },
+  "name": "Driver Seven",
+  "phone": "7020002007",
+  "email": "driver7@example.com",
+  "password": "1111",
+  "role": "driver"
+},{
+  "_id": {
+    "$oid": "6916cf3432bf47e4d079d482"
+  },
+  "name": "Driver Eight",
+  "phone": "7020002008",
+  "email": "driver8@example.com",
+  "password": "1111",
+  "role": "driver"
+},{
+  "_id": {
+    "$oid": "6916cf3432bf47e4d079d483"
+  },
+  "name": "Driver Nine",
+  "phone": "7020002009",
+  "email": "driver9@example.com",
+  "password": "1111",
+  "role": "driver"
+},{
+  "_id": {
+    "$oid": "6916cf3432bf47e4d079d484"
+  },
+  "name": "Driver Ten",
+  "phone": "7020002010",
+  "email": "driver10@example.com",
+  "password": "1111",
+  "role": "driver"
+}]

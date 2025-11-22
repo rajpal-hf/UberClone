@@ -30,6 +30,11 @@ export class WebsocketGateway {
 		client.send(JSON.stringify({ event: "registered", userId: user._id.toString() }));
 	}
 
+	@SubscribeMessage("new_ride")
+	async newRide(@MessageBody() data, @ConnectedSocket() client: WebSocket) {
+		await this.wsService.broadcastNewRide(data);
+	}
+
 	// Driver updates location
 	@SubscribeMessage("driver_location")
 	async driverLocation(@MessageBody() location, @ConnectedSocket() client: WebSocket) {
@@ -43,6 +48,7 @@ export class WebsocketGateway {
 		await this.wsService.acceptRide(data.rideId, client);
 	}
 }
+
 
 
 

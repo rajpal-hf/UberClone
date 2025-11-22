@@ -1,0 +1,61 @@
+[{
+  "_id": {
+    "$oid": "691702f4e98d7cc32d3e18ba"
+  },
+  "userId": {
+    "$oid": "69143ad6eff4e159dcaa4c1a"
+  },
+  "vehicleType": "car",
+  "modelName": "Corolla",
+  "color": "White",
+  "plateNumber": "PB02AA1984",
+  "rcBookUrl": "https://example.com/rcbook.jpg",
+  "verificationStatus": "pending",
+  "createdAt": {
+    "$date": "2025-11-14T10:22:44.322Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-14T10:22:44.322Z"
+  },
+  "__v": 0
+},{
+  "_id": {
+    "$oid": "691dc09838a8263b69545a92"
+  },
+  "userId": {
+    "$oid": "6916cf3432bf47e4d079d47b"
+  },
+  "vehicleType": "car",
+  "modelName": "Bleno",
+  "color": "White",
+  "plateNumber": "PB02AA0001",
+  "rcBookUrl": "https://example.com/rcbook.jpg",
+  "verificationStatus": "pending",
+  "createdAt": {
+    "$date": "2025-11-19T13:05:28.154Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-19T13:05:28.154Z"
+  },
+  "__v": 0
+},{
+  "_id": {
+    "$oid": "691dc15238a8263b69545aed"
+  },
+  "userId": {
+    "$oid": "6916cf3432bf47e4d079d47c"
+  },
+  "vehicleType": "car",
+  "modelName": "nano",
+  "color": "White",
+  "plateNumber": "PB02AA0000",
+  "rcBookUrl": "https://example.com/rcbook.jpg",
+  "verificationStatus": "pending",
+  "createdAt": {
+    "$date": "2025-11-19T13:08:34.584Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-19T13:08:34.584Z"
+  },
+  "__v": 0
+}]

@@ -319,6 +319,8 @@ export class RideService {
 	// }
 
 
+	
+
 	//```````````````````  cancelRide ```````````````````
 	
 	
@@ -378,7 +380,7 @@ export class RideService {
 
 
 			const driverId = ride?.driverId;
-			if (!driverId) {
+			if (!driverId) {	
 				throw new HttpException("Driver not found", 404);
 			}
 			return {
@@ -402,7 +404,8 @@ export class RideService {
 				.findById(rideId)
 				.populate('driverId name phone');
 		} catch (error) {
-			
+			console.log(error);
+			throw error instanceof HttpException ? error : new HttpException("Internal Server Error - getting driver for ride", 500);	
 		}
 	}
 
@@ -451,6 +454,16 @@ export class RideService {
 		}
 	}
 
+	async getNewRides(rideId: string) {
+		try {
+			const rides = await this.rideModel.find({ rideStatus: 'pending' });
+			console.log(rides)
+			return rides
+		} catch (error) {
+			console.log(error)
+			throw error instanceof HttpException ? error : new HttpException("Internal Server Error - creating ride", 500)	
+		}
+	}
 
 
 

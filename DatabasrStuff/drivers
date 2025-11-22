@@ -1,0 +1,77 @@
+[{
+  "_id": {
+    "$oid": "691702f0e98d7cc32d3e18b7"
+  },
+  "userId": {
+    "$oid": "69143ad6eff4e159dcaa4c1a"
+  },
+  "panNumber": "AAACH2702H",
+  "licenseNumber": "MH12-2024-AB1234",
+  "licensePhotoUrl": "http://localhost:3000/uploads/drivers/licensePhoto-1763115760457-693985583.jpeg",
+  "aadhaarNumber": "123456789012",
+  "aadhaarFrontUrl": "http://localhost:3000/uploads/drivers/aadhaarFront-1763115760459-199662476.jpg",
+  "aadhaarBackUrl": "http://localhost:3000/uploads/drivers/aadhaarBack-1763115760467-58563417.jpeg",
+  "IsEmailVerified": true,
+  "verificationStatusFromAdmin": "verified",
+  "status": "online",
+  "createdAt": {
+    "$date": "2025-11-14T10:22:40.491Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-18T10:00:00.038Z"
+  },
+  "__v": 0,
+  "vehicleId": {
+    "$oid": "691702f4e98d7cc32d3e18ba"
+  }
+},{
+  "_id": {
+    "$oid": "691dc06338a8263b69545a77"
+  },
+  "userId": {
+    "$oid": "6916cf3432bf47e4d079d47b"
+  },
+  "panNumber": "AAAAH2702H",
+  "licenseNumber": "MH12-2024-AB1235",
+  "licensePhotoUrl": "http://localhost:3000/uploads/drivers/licensePhoto-1763557475280-487724969.jpeg",
+  "aadhaarNumber": "123456789013",
+  "aadhaarFrontUrl": "http://localhost:3000/uploads/drivers/aadhaarFront-1763557475280-369397470.jpg",
+  "aadhaarBackUrl": "http://localhost:3000/uploads/drivers/aadhaarBack-1763557475287-757141815.jpeg",
+  "verificationStatusFromAdmin": "true",
+  "status": "offline",
+  "createdAt": {
+    "$date": "2025-11-19T13:04:35.304Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-19T13:05:28.156Z"
+  },
+  "__v": 0,
+  "vehicleId": {
+    "$oid": "691dc09838a8263b69545a92"
+  }
+},{
+  "_id": {
+    "$oid": "691dc13538a8263b69545adb"
+  },
+  "userId": {
+    "$oid": "6916cf3432bf47e4d079d47c"
+  },
+  "panNumber": "AAAAA2702H",
+  "licenseNumber": "MH12-2024-AB1236",
+  "licensePhotoUrl": "http://localhost:3000/uploads/drivers/licensePhoto-1763557685230-276955944.jpeg",
+  "aadhaarNumber": "123456789014",
+  "aadhaarFrontUrl": "http://localhost:3000/uploads/drivers/aadhaarFront-1763557685230-677275677.jpg",
+  "aadhaarBackUrl": "http://localhost:3000/uploads/drivers/aadhaarBack-1763557685236-727268495.jpeg",
+  "verificationStatusFromAdmin": "true",
+  "status": "online",
+  "createdAt": {
+    "$date": "2025-11-19T13:08:05.244Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-19T13:08:34.586Z"
+  },
+  "__v": 0,
+  "vehicleId": {
+    "$oid": "691dc15238a8263b69545aed"
+  }
+}]

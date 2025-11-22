@@ -59,10 +59,10 @@ export class RideController {
 	cancelRide(@Param() params: RideParamDto, @Req() req: any) {
 		return this.rideService.cancelRide(params.id, req.user.id);
 	}
-
+	
 	@ApiBearerAuth()
 	@UseGuards(AuthGuard)
-	@Patch('ride_estimate')
+	@Post('ride-fare')
 	estimatedFare(@Body() dto : EstimatedFareDto) {
 		return this.rideService.estimatedFare(dto);
 	}

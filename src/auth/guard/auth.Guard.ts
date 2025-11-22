@@ -8,13 +8,24 @@ export class AuthGuard implements CanActivate {
 	async canActivate(context: ExecutionContext): Promise<boolean> {
 		const request = context.switchToHttp().getRequest();
 
+		console.log('Request headers:', request.headers);
+
 		const authHeader = request.headers['authorization'];
-		if (!authHeader || !authHeader.startsWith('Bearer ')) {
-			throw new UnauthorizedException('Authorization header missing or malformed');
+		let token = null;
+
+		// 1. Check Bearer token
+		if (authHeader && authHeader.startsWith('Bearer ')) {
+			token = authHeader.split(' ')[1];
 		}
 
-		const token = authHeader.split(' ')[1] || request.cookies.token;
-		console.log("jinga lala huhu", token);
+		// 2. If no Bearer token, check cookie
+		if (!token && request.cookies?.token) {
+			token = request.cookies.token;
+		}
+
+		if (!token) {
+			throw new UnauthorizedException('No authentication token provided');
+		}
 
 		try {
 			const decoded = await this.jwtService.verifyAsync(token, {
@@ -26,6 +37,6 @@ export class AuthGuard implements CanActivate {
 		} catch (error) {
 			console.error('Token verification failed:', error);
 			throw new UnauthorizedException('Invalid or expired token');
-		}
+		}	
 	}
 }

@@ -53,7 +53,7 @@ export class Ride  {
 
 	@Prop()
 	paymentOrderId?: string
-
+	
 
 	@Prop({ default: "pending" })
 	paymentStatus: "pending" | "paid" | "failed";

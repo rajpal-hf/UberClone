@@ -10,7 +10,7 @@ export const typeWiseSpeed = {
 	car: 90
 };
 
-export function getDistanceInMeters(lat1, lon1, lat2, lon2) {
+export function 	getDistanceInMeters(lat1, lon1, lat2, lon2) {
 	const R = 6371000;
 	const toRad = (value) => (value * Math.PI) / 180;
 

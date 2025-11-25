@@ -76,9 +76,27 @@ export class RideController {
 	@ApiBearerAuth()
 	@UseGuards(AuthGuard, RolesGuard)
 	@Roles(UserRole.DRIVER)
-	@Get('new-rides')	
+	@Get('new-rides')
 	getAllRides() {
 		return this.rideService.getAllnewRides()
 	}
+
+
+	@ApiBearerAuth()
+	@UseGuards(AuthGuard )
+	@Get('pickup-navigation/:id')
+	pickupNavigation(@Param() params: RideParamDto, @Req() req: any) {
+		return this.rideService.pickupNavigation(params.id , req.user.id)
+	}
+
+
+	@ApiBearerAuth()
+	@UseGuards(AuthGuard )
+	@Get('active-ride/:id')
+	activeRide(@Param() params: RideParamDto, @Req() req: any) {
+		return this.rideService.activeRide(params.id , req.user.id)
+	}
+
+
 
 }

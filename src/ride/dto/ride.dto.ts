@@ -91,7 +91,7 @@ export class EstimatedFareDto {
 
 
 
-export class ActualDropoffDto { 
+export class ActualDropoffDto {
 	@ApiProperty({
 		description: 'Drop-off location details including latitude, longitude, and optional address',
 		example: {
@@ -107,4 +107,21 @@ export class ActualDropoffDto {
 		lng: number;
 		address?: string;
 	};
+}
+export class DriverLocationDto {
+	@ApiProperty({
+		description: 'Drop-off location details including latitude, longitude, and optional address',
+		example: {
+			lat: 28.495758,
+			lng: 77.090006,
+			address: '12, DLF Tower 8th Rd',
+		},
+	})
+	@IsObject()
+	@IsNotEmpty()
+		driverLocation: {
+			lat: number;
+			lng: number;
+			address?: string;
+		};
 }

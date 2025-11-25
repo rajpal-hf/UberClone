@@ -3,7 +3,7 @@ import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, ObjectId, Types } from 'mongoose';
 import { Ride, RideDocument } from './schema/ride.schema';
-import {  ActualDropoffDto, CreateRideDto, EstimatedFareDto } from './dto/ride.dto';
+import {  ActualDropoffDto, CreateRideDto, DriverLocationDto, EstimatedFareDto } from './dto/ride.dto';
 import { Auth, AuthDocument } from 'src/auth/schema/auth.schema';
 import { RideCancelBy, UserRole } from 'src/common/constants';
 import { Driver, DriverDocument } from 'src/driver/schema/driver.schema';
@@ -80,7 +80,7 @@ export class RideService {
 
 
 	
-	async acceptRide(rideId: string, dId: string) {
+	async acceptRide(rideId: string, dId: string, dto: DriverLocationDto) {
 		try {
 			const ride = await this.rideModel.findOneAndUpdate(
 				{
@@ -93,6 +93,7 @@ export class RideService {
 				},
 				{
 					$set: {
+						...dto,
 						driverId: new Types.ObjectId(dId),
 						rideStatus: 'accepted'
 					}
@@ -142,7 +143,7 @@ export class RideService {
 			const driver = await this.driverModel.findOne({ userId: new Types.ObjectId(dId) });
 			if (!driver) throw new HttpException("Driver not found", 404);
 			
-			console.log("check 3")
+		
 			// pickup coordinates from ride
 			
 			// const pickupLat = ride.pickupLocation.lat;
@@ -346,7 +347,7 @@ export class RideService {
 			if (userRole === UserRole.RIDER) {
 				await this.rideModel.findOneAndUpdate(
 					{ _id: rideId },
-					{ $set: { rideStatus: 'cancelled', userId: null, cancelBy: RideCancelBy.RIDER}},
+					{ $set: { rideStatus: 'cancelled', cancelBy: RideCancelBy.RIDER}},
 				);
 			}
 			if (userRole === UserRole.DRIVER) {
@@ -373,28 +374,28 @@ export class RideService {
 	//```````````````````  getAcceptedRide ```````````````````
 
 	
-	async getAcceptedRide(rideId: string , req : string) {
+	async getAcceptedRide(rideId: string, req: string) {
 		try {
-			const id = new Types.ObjectId(req)
-			const ride = await this.rideModel.findOne({ _id: rideId, rideStatus: 'accepted', userId: id }).populate('driverId name phone');
-
-
-			const driverId = ride?.driverId;
-			if (!driverId) {	
-				throw new HttpException("Driver not found", 404);
+			console.log("req kya hai ji", req)
+			const riderObjectId = new Types.ObjectId(req);
+			const id = new Types.ObjectId(rideId);
+			console.log("rideId kya hai ji", typeof (id))
+			const ride = await this.rideModel
+				.findOne({ _id: id, rideStatus: 'accepted', driverId: riderObjectId })
+				.populate({ path: 'driverId', select: 'name phone' });
+			if (!ride) {
+				throw new HttpException('Accepted ride not found', 404);
 			}
 			return {
 				success: true,
-				driverId
-			}
-		
+				ride
+			};
 		}
 		catch (error) {
 			console.log(error)
 			throw error instanceof HttpException ? error : new HttpException("Internal Server Error - getting driver for ride", 500)
 		}
 	}
-
 	
 
 	//```````````````````  getDriversForRide `````````````````````````````
@@ -454,18 +455,28 @@ export class RideService {
 		}
 	}
 
-	async getNewRides(rideId: string) {
+
+	async getAllnewRides() {
 		try {
-			const rides = await this.rideModel.find({ rideStatus: 'pending' });
+			const rides = await this.rideModel.find({ rideStatus: 'pending' }).populate('riderId', 'name phone')
+;
 			console.log(rides)
-			return rides
+			return {
+				success: true,
+				rides
+			}
 		} catch (error) {
 			console.log(error)
-			throw error instanceof HttpException ? error : new HttpException("Internal Server Error - creating ride", 500)	
+			throw error instanceof HttpException ? error : new HttpException("Internal Server Error - new rides", 500)	
 		}
 	}
 
 
 
+
 }
+
+
+
+
 

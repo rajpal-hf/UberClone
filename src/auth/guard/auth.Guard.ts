@@ -8,7 +8,6 @@ export class AuthGuard implements CanActivate {
 	async canActivate(context: ExecutionContext): Promise<boolean> {
 		const request = context.switchToHttp().getRequest();
 
-		console.log('Request headers:', request.headers);
 
 		const authHeader = request.headers['authorization'];
 		let token = null;
@@ -31,7 +30,6 @@ export class AuthGuard implements CanActivate {
 			const decoded = await this.jwtService.verifyAsync(token, {
 				secret: process.env.JWT_SECRET,
 			});
-			console.log('Decoded JWT:', decoded);
 			request.user = decoded;
 			return true;
 		} catch (error) {

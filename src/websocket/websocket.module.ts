@@ -17,7 +17,6 @@ import { RideModule } from 'src/ride/ride.module';
 			{ name: Driver.name, schema: DriverSchema },
 			{ name: Ride.name, schema: RideSchema },
 		]),
-		
 		RideModule
 	],
 	providers: [WebsocketGateway,],

@@ -58,7 +58,7 @@ export class RazorpayWebhookController {
 					break;
 
 				default:
-					console.log('⚠️ Unhandled event type:', body.event);
+					console.log(' Unhandled event type:', body.event);
 			}
 
 			return res.status(HttpStatus.OK).json({ success: true });

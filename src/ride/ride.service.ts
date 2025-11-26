@@ -3,13 +3,12 @@ import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, ObjectId, Types } from 'mongoose';
 import { Ride, RideDocument } from './schema/ride.schema';
-import {  ActualDropoffDto, CreateRideDto, DriverLocationDto, EstimatedFareDto } from './dto/ride.dto';
+import { ActualDropoffDto, CreateRideDto, DriverLocationDto, EstimatedFareDto } from './dto/ride.dto';
 import { Auth, AuthDocument } from 'src/auth/schema/auth.schema';
 import { RideCancelBy, UserRole } from 'src/common/constants';
 import { Driver, DriverDocument } from 'src/driver/schema/driver.schema';
 import { getDistanceInMeters, totalFare, totalTime, typeWiseFare, typeWiseSpeed } from 'src/common/fareCal';
 import { RazorpayService } from 'src/payment/razorpay.service';
-
 
 @Injectable()
 export class RideService {
@@ -18,7 +17,7 @@ export class RideService {
 		@InjectModel(Auth.name) private authModel: Model<AuthDocument>,
 		@InjectModel(Driver.name) private driverModel: Model<DriverDocument>,
 		
-		private readonly razorpayService : RazorpayService
+		private readonly razorpayService : RazorpayService,
 	) { }
 
 
@@ -44,7 +43,7 @@ export class RideService {
 				createdAt: new Date(),
 			});
 
-			// here is error
+		
 
 			return {
 				success: true,
@@ -57,6 +56,75 @@ export class RideService {
 		}
 	}
 
+	async startRide(rideId: string, dId: string) {
+
+		console.log("check 1")
+		try {
+
+			console.log("check 2")
+
+			const id = new Types.ObjectId(rideId)
+
+
+			const ride = await this.rideModel.findById(rideId);
+			if (!ride) throw new HttpException("Ride not found", 404);
+
+
+			const driver = await this.driverModel.findOne({ userId: new Types.ObjectId(dId) });
+			if (!driver) throw new HttpException("Driver not found", 404);
+
+
+			// pickup coordinates from ride
+
+			// const pickupLat = ride.pickupLocation.lat;
+			// const pickupLng = ride.pickupLocation.lng;
+
+
+			// // driver live location
+
+			// const driverLat = ride.driverLocation.lat
+			// const driverLng = ride.driverLocation.lng
+
+			// const distance = getDistanceInMeters(
+			// 	driverLat,
+			// 	driverLng,
+			// 	pickupLat,
+			// 	pickupLng
+			// );
+
+			console.log("check 4")
+
+			// check threshold
+			// if (distance > 100) {
+			// 	throw new HttpException(
+			// 		`Driver is too far from pickup location: ${Math.round(distance)}m`,
+			// 		400
+			// 	);
+			// }
+
+			// update ride status
+
+
+			const rr = await this.rideModel.findById(rideId)
+			console.log(" xxx ", rr)
+			const updatedRide = await this.rideModel.findOneAndUpdate(
+				{ _id: rideId, driverId: new Types.ObjectId(dId) },
+				{ $set: { rideStatus: "in_progress" } },
+				{ new: true }
+			);
+
+			return {
+				success: true,
+				ride: updatedRide
+			};
+
+		} catch (error) {
+			console.log(error);
+			throw error instanceof HttpException
+				? error
+				: new HttpException("Internal Server Error - starting ride", 500);
+		}
+	}
 
 	async getRides(id: string) {
 		try {
@@ -117,75 +185,7 @@ export class RideService {
 
 
 
-	async startRide(rideId: string, dId: string) {
 
-		console.log("check 1")
-		try {
-
-			console.log("check 2")
-
-			const id = new Types.ObjectId(rideId)
-
-			
-			const ride = await this.rideModel.findById(rideId);
-			if (!ride) throw new HttpException("Ride not found", 404);
-
-			
-			const driver = await this.driverModel.findOne({ userId: new Types.ObjectId(dId) });
-			if (!driver) throw new HttpException("Driver not found", 404);
-			
-		
-			// pickup coordinates from ride
-			
-			// const pickupLat = ride.pickupLocation.lat;
-			// const pickupLng = ride.pickupLocation.lng;
-			
-			
-			// // driver live location
-			
-			// const driverLat = ride.driverLocation.lat
-			// const driverLng = ride.driverLocation.lng
-			
-			// const distance = getDistanceInMeters(
-			// 	driverLat,
-			// 	driverLng,
-			// 	pickupLat,
-			// 	pickupLng
-			// );
-			
-			console.log("check 4")
-
-			// check threshold
-			// if (distance > 100) {
-			// 	throw new HttpException(
-			// 		`Driver is too far from pickup location: ${Math.round(distance)}m`,
-			// 		400
-			// 	);
-			// }
-
-			// update ride status
-
-
-			const rr = await this.rideModel.findById(rideId)
-			console.log( " xxx " , rr )
-			const updatedRide = await this.rideModel.findOneAndUpdate(
-				{ _id: rideId, driverId: new Types.ObjectId(dId) },
-				{ $set: { rideStatus: "in_progress" } },
-				{ new: true }
-			);
-
-			return {
-				success: true,
-				ride: updatedRide
-			};
-
-		} catch (error) {
-			console.log(error);
-			throw error instanceof HttpException
-				? error
-				: new HttpException("Internal Server Error - starting ride", 500);
-		}
-	}
 
 	async completeRide(rideId: string, driverId: string, dto: ActualDropoffDto) {
 		try {
@@ -304,9 +304,9 @@ export class RideService {
 			console.log("req kya hai ji", req)
 			const riderObjectId = new Types.ObjectId(req);
 			const id = new Types.ObjectId(rideId);
-			console.log("rideId kya hai ji", typeof (id))
+			
 			const ride = await this.rideModel
-				.findOne({ _id: id, rideStatus: 'accepted', driverId: riderObjectId })
+				.findOne({ _id: id, rideStatus: 'accepted', riderId: riderObjectId })
 				.populate({ path: 'driverId', select: 'name phone' });
 			if (!ride) {
 				throw new HttpException('Accepted ride not found - BE - Seaching Driver', 404);
@@ -324,9 +324,7 @@ export class RideService {
 
 	async pickupNavigation(rideId: string, req: string) {
 		try {
-			// ----------------------------
-			// Validate incoming parameters
-			// ----------------------------
+		// Validate incoming parameters
 			if (!rideId || typeof rideId !== "string") {
 				throw new HttpException("Invalid rideId - BE - pickupNavigation", 400);
 			}
@@ -426,7 +424,7 @@ export class RideService {
 
 			console.log("rideObjectId", rideObjectId);
 			console.log("driverId", driverId);
-			// Get ride
+	
 			const ride = await this.rideModel
 				.findOne({
 					_id: rideObjectId,
@@ -444,9 +442,7 @@ export class RideService {
 				throw new HttpException("Location data missing in ride", 422);
 			}
 
-			// -----------------------------
-			// 1. TOTAL DISTANCE (Pickup → Drop)
-			// -----------------------------
+
 			const totalMeters = getDistanceInMeters(
 				ride.pickupLocation.lat,
 				ride.pickupLocation.lng,
@@ -455,9 +451,7 @@ export class RideService {
 			);
 			const totalKm = +(totalMeters / 1000).toFixed(2);
 
-			// -----------------------------
-			// 2. REMAINING DISTANCE (Driver → Drop)
-			// -----------------------------
+
 			const remainingMeters = getDistanceInMeters(
 				ride.driverLocation.lat,
 				ride.driverLocation.lng,
@@ -466,30 +460,21 @@ export class RideService {
 			);
 			const remainingKm = +(remainingMeters / 1000).toFixed(2);
 
-			// -----------------------------
-			// 3. ELAPSED TIME
-			// -----------------------------
+		
 			const now = new Date();
 			const startTime = ride.startTime ?? now;
 
 			const elapsedMinutes = Math.floor((now.getTime() - startTime.getTime()) / 60000);
 
-			// -----------------------------
-			// 4. ESTIMATED TIME LEFT
-			// -----------------------------
+			
 			const speedKmHr = typeWiseSpeed[ride.vehicleType]; // from your fareCal
 			const estimatedRemainingMinutes = Math.ceil((remainingKm / speedKmHr) * 60);
 
-			// -----------------------------
-			// 5. LIVE ESTIMATED FARE
-			// -----------------------------
+		
 			const farePerKm = typeWiseFare[ride.vehicleType];
 
 			const estimatedFare = +(totalKm * farePerKm).toFixed(2);
 
-			// -----------------------------
-			// 6. DISTANCE COVERED SO FAR
-			// -----------------------------
 			const coveredKm = +(totalKm - remainingKm).toFixed(2);
 
 			return {
@@ -500,21 +485,16 @@ export class RideService {
 				driverId: ride.driverId,
 				user: ride.riderId ?? null,
 
-				// ---- LOCATIONS ----
 				pickupLocation: ride.pickupLocation,
 				driverLocation: ride.driverLocation,
 				dropoffLocation: ride.dropoffLocation,
 
-				// ---- DISTANCES ----
 				totalDistanceKm: totalKm,
 				coveredDistanceKm: coveredKm,
 				remainingDistanceKm: remainingKm,
 
-				// ---- TIME ----
 				elapsedMinutes,
 				estimatedRemainingMinutes,
-
-				// ---- Fare ----
 				estimatedFare,
 
 				isDriverClose: remainingKm <= 0.03, // 30 meters approx
@@ -540,7 +520,7 @@ export class RideService {
 		} catch (error) {
 			console.log(error);
 			throw error instanceof HttpException ? error : new HttpException("Internal Server Error - getting driver for ride", 500);	
-		}
+		}	
 	}
 
 
@@ -588,12 +568,11 @@ export class RideService {
 		}
 	}
 
-
 	async getAllnewRides() {
 		try {
 			const rides = await this.rideModel.find({ rideStatus: 'pending' }).populate('riderId', 'name phone')
 ;
-			console.log(rides)
+			
 			return {
 				success: true,
 				rides

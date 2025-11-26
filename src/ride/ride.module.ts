@@ -6,7 +6,6 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Ride, RideSchema } from './schema/ride.schema';
 import { Auth, AuthSchema } from 'src/auth/schema/auth.schema';
 import { Driver, DriverSchema } from 'src/driver/schema/driver.schema';
-import { WebsocketGateway } from 'src/websocket/websocket.gateway';
 import { RazorpayService } from 'src/payment/razorpay.service';
 import { Payment, PaymentSchema } from './schema/payment.schema';
 
@@ -23,8 +22,7 @@ import { Payment, PaymentSchema } from './schema/payment.schema';
 		])
 	],
   controllers: [RideController],
-	providers: [RideService,
-		WebsocketGateway, RazorpayService
+	providers: [RideService, RazorpayService
 	],
 	exports : [RideService]
 })

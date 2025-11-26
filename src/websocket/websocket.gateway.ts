@@ -20,7 +20,7 @@ import { Ride, RideDocument,  } from 'src/ride/schema/ride.schema';
 export class WebsocketGateway {
 	@WebSocketServer() server: WebSocket.Server;
 
-	private clients = new Map<string, WebSocket>(); // userId → socket
+	private clients = new Map<string, WebSocket>(); 
 
 	constructor(
 		private readonly rideService: RideService,
@@ -39,9 +39,8 @@ export class WebsocketGateway {
 		}
 	}
 
-	// ---------------------------------------
-	//  ✔ When Client Connects
-	// ---------------------------------------
+	//  When Client Connects
+
 	async handleConnection(client: WebSocket, req: any) {
 		const token = new URL(req.url, 'http://localhost').searchParams.get('token');
 		const user = await this.validateToken(token!);
@@ -58,9 +57,7 @@ export class WebsocketGateway {
 		console.log('WS Connected:', userId);
 	}
 
-	// ---------------------------------------
-	//  ✔ When Client Disconnects
-	// ---------------------------------------
+
 	handleDisconnect(client: WebSocket) {
 		const userId = (client as any).userId;
 		if (userId) {
@@ -69,9 +66,7 @@ export class WebsocketGateway {
 		}
 	}
 
-	// ---------------------------------------
-	//  ✔ Emit to specific user
-	// ---------------------------------------
+	//  Emit to specific user
 	emitToUser(userId: string, event: string, data: any) {
 		const client = this.clients.get(userId);
 		if (client && client.readyState === WebSocket.OPEN) {
@@ -79,10 +74,9 @@ export class WebsocketGateway {
 		}
 	}
 
-	// ---------------------------------------
-	//  ✔ Broadcast to all drivers
-	// ---------------------------------------
+	//   Broadcast to all drivers
 	broadcastToDrivers(event: string, data: any) {
+		console.log("broadcastToDrivers", event, data)
 		for (const [id, client] of this.clients) {
 			if ((client as any).role === 'DRIVER') {
 				if (client.readyState === WebSocket.OPEN) {
@@ -92,46 +86,35 @@ export class WebsocketGateway {
 		}
 	}
 
-	// ---------------------------------------
-	//  ✔ Broadcast to all riders (rare)
-	// ---------------------------------------
-	broadcastToRiders(event: string, data: any) {
-		for (const [id, client] of this.clients) {
-			if ((client as any).role === 'RIDER') {
-				if (client.readyState === WebSocket.OPEN) {
-					client.send(JSON.stringify({ event, data }));
-				}
-			}
+
+
+// ``` client vali side toh ane aa eh
+	// 1 Driver Accepts Ride
+		@SubscribeMessage('ride:accept')
+		async handleAccept(
+			@MessageBody() data: any,
+			@ConnectedSocket() client: WebSocket,
+		) {
+
+			const driverId = (client as any).userId;
+
+			const { rideId, lat, lng } = data;
+
+			const result = await this.rideService.acceptRide(rideId, driverId, {
+				driverLocation: { lat, lng }
+			});
+
+
+			// notify rider immediately
+			// Notify Rider
+			this.emitToUser(result.ride.riderId.toString(), 'ride:accepted', result.ride);
+
+			// Notify Driver (important!)
+			this.emitToUser(result.ride.driverId!.toString(), 'ride:accepted', result.ride);
+
 		}
-	}
 
-	// ------------------------------------------------------------------
-	// 🚖  REAL TIME EVENT HANDLERS (5 incoming events from clients)
-	// ------------------------------------------------------------------
-
-
-	// ---------------------------------------------------------
-	// 1️⃣ Driver Accepts Ride
-	// ---------------------------------------------------------
-	@SubscribeMessage('ride:accept')
-	async handleAccept(
-		@MessageBody() data: any,
-		@ConnectedSocket() client: WebSocket,
-	) {
-		const driverId = (client as any).userId;
-		const { rideId, lat, lng } = data;
-
-		const result = await this.rideService.acceptRide(rideId, driverId, {
-			driverLocation: { lat, lng }
-		});
-
-		// notify rider immediately
-		this.emitToUser(result.ride.riderId.toString(), 'ride:accepted', result.ride);
-	}
-
-	// ---------------------------------------------------------
-	// 2️⃣ Driver Starts Ride
-	// ---------------------------------------------------------
+	//  Driver Starts Ride
 	@SubscribeMessage('ride:start')
 	async handleStart(
 		@MessageBody() data: any,
@@ -156,9 +139,7 @@ export class WebsocketGateway {
 		this.emitToUser(result.ride.riderId.toString(), 'ride:started', result.ride);
 	}
 
-	// ---------------------------------------------------------
-	// 3️⃣ Driver Live Location → Rider
-	// ---------------------------------------------------------
+	//  Driver Live Location → Rider
 	@SubscribeMessage('driver:location')
 	async handleDriverLocation(
 		@MessageBody() data: any,
@@ -184,6 +165,8 @@ export class WebsocketGateway {
 		const userId = (client as any).userId;
 		const { rideId } = data;
 
+		console.log("handleCancel", userId, rideId)
+		
 		const result = await this.rideService.cancelRide(rideId, userId);
 
 		const ride = await this.rideModel.findById(rideId);
@@ -197,9 +180,7 @@ export class WebsocketGateway {
 			this.emitToUser(ride.driverId.toString(), 'ride:cancelled', ride);
 	}
 
-	// ---------------------------------------------------------
-	// 5️⃣ Complete Ride
-	// ---------------------------------------------------------
+	
 	@SubscribeMessage('ride:complete')
 	async handleComplete(
 		@MessageBody() data: any,
@@ -220,54 +201,3 @@ export class WebsocketGateway {
 }
 
 
-
-// import {
-// 	WebSocketGateway,
-// 	WebSocketServer,
-// 	SubscribeMessage,
-// 	ConnectedSocket,
-// 	MessageBody,
-// } from '@nestjs/websockets';
-// import { WebSocket } from 'ws';
-// import { WebsocketService } from './websocket.service';
-
-// @WebSocketGateway({ cors: true, path: '/ws' })
-// export class WebsocketGateway {
-// 	@WebSocketServer() server: WebSocket.Server;
-
-// 	constructor(private wsService: WebsocketService) { }
-
-// 	// When client connects
-// 	async handleConnection(client: WebSocket, req: any) {
-// 		const token = new URL(req.url, "http://localhost").searchParams.get("token");
-// 		const user = await this.wsService.validateToken(token!);
-// 		if (!user) return client.close();
-
-// 		(client as any).userId = user._id.toString();
-// 		(client as any).role = user.role;
-
-// 		console.log("WS Connected:", user._id);
-
-// 		// Automatically register
-// 		await this.wsService.registerClient(user._id.toString(), user.role, client);
-// 		client.send(JSON.stringify({ event: "registered", userId: user._id.toString() }));
-// 	}
-
-// 	@SubscribeMessage("new_ride")
-// 	async newRide(@MessageBody() data, @ConnectedSocket() client: WebSocket) {
-// 		await this.wsService.broadcastNewRide(data);
-// 	}
-
-// 	// Driver updates location
-// 	@SubscribeMessage("driver_location")
-// 	async driverLocation(@MessageBody() location, @ConnectedSocket() client: WebSocket) {
-		
-// 		await this.wsService.updateDriverLocation(client, location);
-// 	}
-
-// 	// Driver accepts ride
-// 	@SubscribeMessage("accept_ride")
-// 	async acceptRide(@MessageBody() data, @ConnectedSocket() client: WebSocket) {
-// 		await this.wsService.acceptRide(data.rideId, client);
-// 	}
-// }

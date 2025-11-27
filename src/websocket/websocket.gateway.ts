@@ -52,7 +52,9 @@ export class WebsocketGateway {
 		(client as any).userId = userId;
 		(client as any).role = user.role;
 
+
 		this.clients.set(userId, client);
+
 
 		console.log('WS Connected:', userId);
 	}
@@ -76,9 +78,9 @@ export class WebsocketGateway {
 
 	//   Broadcast to all drivers
 	broadcastToDrivers(event: string, data: any) {
-		console.log("broadcastToDrivers", event, data)
+		
 		for (const [id, client] of this.clients) {
-			if ((client as any).role === 'DRIVER') {
+			if ((client as any).role === 'driver') {
 				if (client.readyState === WebSocket.OPEN) {
 					client.send(JSON.stringify({ event, data }));
 				}
@@ -88,7 +90,27 @@ export class WebsocketGateway {
 
 
 
-// ``` client vali side toh ane aa eh
+	// ``` client vali side toh ane aa eh
+@SubscribeMessage('ride:request')
+	async handleRequest(@MessageBody() data: any, @ConnectedSocket() client: WebSocket) {
+		const riderId = (client as any).userId;
+		const result = await this.rideService.createRide(data, riderId);
+
+
+
+		if (!result.success) return;
+
+		// Send ride created response to rider
+		this.emitToUser(riderId, "ride:created", {
+			rideId: result.ride._id
+		});
+
+		// Notify drivers
+		this.broadcastToDrivers('new:ride', result.ride);
+	}
+
+
+
 	// 1 Driver Accepts Ride
 		@SubscribeMessage('ride:accept')
 		async handleAccept(
@@ -124,9 +146,9 @@ export class WebsocketGateway {
 		const { rideId } = data;
 
 		const result = await this.rideService.startRide(rideId, driverId);
-		if (!result) {
-			throw new HttpException('result not found - socket error', 404);
-		};
+
+		console.log("result - start", result )
+		
 		if (!result) {
 			throw new HttpException('result not found - socket error', 404);
 		};
@@ -165,19 +187,20 @@ export class WebsocketGateway {
 		const userId = (client as any).userId;
 		const { rideId } = data;
 
-		console.log("handleCancel", userId, rideId)
 		
 		const result = await this.rideService.cancelRide(rideId, userId);
 
-		const ride = await this.rideModel.findById(rideId);
+		// const ride = await this.rideModel.findById(rideId);
+		const ride = result.ride
+		console.log("ride- cancel", ride)
 
 		// notify both sides
 		if (!ride) {
 			throw new HttpException('Ride not found', 404);
 		}
 		this.emitToUser(ride.riderId.toString(), 'ride:cancelled', ride);
-		if (ride.driverId)
-			this.emitToUser(ride.driverId.toString(), 'ride:cancelled', ride);
+		
+			this.emitToUser(ride.driverId!.toString(), 'ride:cancelled', ride);
 	}
 
 	
@@ -186,6 +209,8 @@ export class WebsocketGateway {
 		@MessageBody() data: any,
 		@ConnectedSocket() client: WebSocket,
 	) {
+
+		console.log("complete BE call")
 		const driverId = (client as any).userId;
 		const { rideId, dropoffLocation } = data;
 
@@ -195,8 +220,11 @@ export class WebsocketGateway {
 			{ dropoffLocation }
 		);
 
+		console.log("result - complete", result)
+
 		// send final update + payment details
-		this.emitToUser(result.ride.riderId.toString(), 'ride:completed', result);
+		this.emitToUser(result.ride.riderId.toString(), 'ride:completed', result.ride);
+		this.emitToUser(result.ride.driverId!.toString(), 'ride:completed', result.ride);
 	}
 }
 

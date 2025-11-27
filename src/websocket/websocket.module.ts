@@ -6,8 +6,6 @@ import { Auth, AuthSchema } from 'src/auth/schema/auth.schema';
 import { Driver, DriverSchema } from 'src/driver/schema/driver.schema';
 import { Ride, RideSchema } from 'src/ride/schema/ride.schema';
 import { JwtModule } from '@nestjs/jwt';
-import { RideService } from 'src/ride/ride.service';
-import { RazorpayService } from 'src/payment/razorpay.service';
 import { RideModule } from 'src/ride/ride.module';
 @Module({
 	imports: [

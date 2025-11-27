@@ -16,8 +16,6 @@ export class Ride  {
 	@Prop({ required: true, enum: VehicleType })
 	vehicleType: VehicleType;
 
-
-
 	@Prop({ type: Object, required: true })
 	pickupLocation: {
 		lat: number;

@@ -195,6 +195,10 @@ export class RideService {
 			});
 
 			// ithe ride mili ? ..
+			console.log("ride kya hai ji")
+			console.log( "eeeeeee",ride)	
+			console.log("eeeeeee",dto)
+			console.log("eeeeeee",driverId)
 
 			if (!ride) throw new HttpException('Ride not found', 404);
 
@@ -217,22 +221,10 @@ export class RideService {
 			ride.rideStatus = "completed";
 
 			await ride.save();
-
-			// Create Razorpay Order after ride completion
-			const order = await this.razorpayService.createOrder(fare);
-
-			// Save payment order inside ride
-			ride.paymentOrderId = order.id;
-			await ride.save();
-
 			return {
 				success: true,
 				ride,
-				payment: {
-					orderId: order.id,
-					amount: order.amount,
-					currency: order.currency
-				}
+				
 			};
 
 		} catch (error) {
@@ -284,6 +276,7 @@ export class RideService {
 
 			return {
 				success: true,
+				ride,
 				message: "Ride Cancelled"
 			}
 		}

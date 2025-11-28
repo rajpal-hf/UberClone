@@ -70,7 +70,7 @@ export class RideController {
 	@UseGuards(AuthGuard)
 	@Get('driver/:id')
 	getDriverForRide(@Param() params: RideParamDto, @Req() req: any) {
-		return this.rideService.getAcceptedRide(params.id , req.user.id)
+		return this.rideService.getAcceptedOrInProgressRide(params.id , req.user.id)
 	}
 
 	@ApiBearerAuth()

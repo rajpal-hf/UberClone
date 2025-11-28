@@ -11,6 +11,7 @@ export class RazorpayController {
 
 	@Post('create-order')
 	async createOrder(@Body('amount') amount: number) {
+		console.log("Creating order for amount:", amount);
 		const order = await this.razorpayService.createOrder(amount);
 		return { orderId: order.id, amount: order.amount, currency: order.currency };
 	}
@@ -37,7 +38,6 @@ export class RazorpayController {
 		if (!valid) {
 			return { success: false, message: 'Invalid signature' };
 		}
-
 		// Step 2: Validate amount with ride
 		const ride = await this.razorpayService.getRideById(rideId);
 		if (!ride) return { success: false, message: 'Ride not found' };
@@ -53,8 +53,6 @@ export class RazorpayController {
 			transactionId: razorpay_payment_id,
 			status: "SUCCESS",
 		});
-
-
 		return { success: true };
 	}
 

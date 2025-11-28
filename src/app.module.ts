@@ -12,6 +12,7 @@ import { AdminModule } from './admin/admin.module';
 import { FileUploadModule } from './file-upload/file-upload.module';
 import { RideModule } from './ride/ride.module';
 import { WebsocketModule } from './websocket/websocket.module';
+import { RazorpayModule } from './payment/razorpay.module';
 
 @Module({
 	imports: [AuthModule,
@@ -25,6 +26,7 @@ import { WebsocketModule } from './websocket/websocket.module';
 		RideModule,
 		AdminModule,			
 		WebsocketModule,
+		RazorpayModule,
 	],
   controllers: [AppController],
   providers: [AppService],

@@ -22,7 +22,7 @@ import { Payment, PaymentSchema } from './schema/payment.schema';
 		])
 	],
   controllers: [RideController],
-	providers: [RideService, RazorpayService
+	providers: [RideService,
 	],
 	exports : [RideService]
 })

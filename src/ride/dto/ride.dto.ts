@@ -48,7 +48,7 @@ dropoffLocation: {
 
 export class RideParamDto { 
 	@ApiProperty({ example: "6915695714140498f021d98c" })
-	@IsMongoId()
+	@IsString()
 	id : string
 }
 

@@ -8,7 +8,6 @@ import { Auth, AuthDocument } from 'src/auth/schema/auth.schema';
 import { RideCancelBy, UserRole } from 'src/common/constants';
 import { Driver, DriverDocument } from 'src/driver/schema/driver.schema';
 import { getDistanceInMeters, totalFare, totalTime, typeWiseFare, typeWiseSpeed } from 'src/common/fareCal';
-import { RazorpayService } from 'src/payment/razorpay.service';
 
 @Injectable()
 export class RideService {
@@ -16,9 +15,7 @@ export class RideService {
 		@InjectModel(Ride.name) private rideModel: Model<RideDocument>,
 		@InjectModel(Auth.name) private authModel: Model<AuthDocument>,
 		@InjectModel(Driver.name) private driverModel: Model<DriverDocument>,
-		
-		private readonly razorpayService : RazorpayService,
-	) { }
+			) { }
 
 
 	async createRide(dto: CreateRideDto, rid: string) {
@@ -182,11 +179,6 @@ export class RideService {
 	}
 
 
-
-
-
-
-
 	async completeRide(rideId: string, driverId: string, dto: ActualDropoffDto) {
 		try {
 			const ride = await this.rideModel.findOne({
@@ -292,32 +284,46 @@ export class RideService {
 	//```````````````````  getAcceptedRide ```````````````````
 
 	
-	async getAcceptedRide(rideId: string, req: string) {
+	async getAcceptedOrInProgressRide(rideId: string, req: string) {
 		try {
-			console.log("req kya hai ji", req)
+			if (!Types.ObjectId.isValid(rideId) || !Types.ObjectId.isValid(req)) {
+				throw new HttpException("Invalid ObjectId format - BE - getRide", 400);
+			}
+
 			const riderObjectId = new Types.ObjectId(req);
 			const id = new Types.ObjectId(rideId);
-			
+
+			console.log("Request IDs -> Rider:", riderObjectId, "Ride:", id);
+
 			const ride = await this.rideModel
-				.findOne({ _id: id, rideStatus: 'accepted', riderId: riderObjectId })
+				.findOne({
+					_id: id,
+					riderId: riderObjectId,
+					rideStatus: { $in: ['accepted', 'in_progress'] }
+				})
 				.populate({ path: 'driverId', select: 'name phone' });
+
 			if (!ride) {
-				throw new HttpException('Accepted ride not found - BE - Seaching Driver', 404);
+				throw new HttpException('Ride not found - accepted/in_progress', 404);
 			}
-			return {
-				success: true,
-				ride
-			};
+
+			return { success: true, ride };
 		}
 		catch (error) {
-			console.log(error)
-			throw error instanceof HttpException ? error : new HttpException("Internal Server Error - getting driver for ride", 500)
+			console.log(error);
+			throw error instanceof HttpException
+				? error
+				: new HttpException("Internal Server Error - getting ride", 500);
 		}
 	}
 
+
 	async pickupNavigation(rideId: string, req: string) {
 		try {
-		// Validate incoming parameters
+			// Validate incoming parameters
+			console.log("rideId and req pickupNavigation", rideId, req)
+			console.log("type of rideId pickupNavigation", typeof rideId)
+
 			if (!rideId || typeof rideId !== "string") {
 				throw new HttpException("Invalid rideId - BE - pickupNavigation", 400);
 			}

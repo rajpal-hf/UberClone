@@ -45,6 +45,9 @@ export class WebsocketGateway {
 		const token = new URL(req.url, 'http://localhost').searchParams.get('token');
 		const user = await this.validateToken(token!);
 
+		console.log("clients", this.clients)
+		console.log("client", client)
+
 		if (!user) return client.close();
 
 		const userId = user._id.toString();
@@ -52,8 +55,12 @@ export class WebsocketGateway {
 		(client as any).userId = userId;
 		(client as any).role = user.role;
 
+		console.log("client", client)
+
 
 		this.clients.set(userId, client);
+
+		console.log("this.clients", this.clients.keys())
 
 
 		console.log('WS Connected:', userId);

@@ -4,7 +4,7 @@ import Razorpay from 'razorpay';
 import * as crypto from 'crypto';
 import { Model, Types } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
-import { Payment, PaymentDocument } from 'src/ride/schema/payment.schema';
+import { Payment, PaymentDocument, PaymentStatus } from 'src/ride/schema/payment.schema';
 import { Ride, RideDocument } from 'src/ride/schema/ride.schema';
 
 @Injectable()
@@ -37,6 +37,8 @@ export class RazorpayService {
 			.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET!)
 			.update(body.toString())
 			.digest('hex');
+		console.log("Expected Signature:", expectedSignature, "Provided Signature:", signature);
+		console.log("Signature Match:", expectedSignature === signature);
 		return expectedSignature === signature;
 	}	
 
@@ -44,7 +46,7 @@ export class RazorpayService {
 	async savePayment(data: {
 		rideId: string,
 		riderId: string,
-		amount: number,
+		amount: number,	
 		transactionId: string,
 		status: string,
 	}) {
@@ -65,6 +67,7 @@ export class RazorpayService {
 			if (!ride) {
 				throw new HttpException('Ride not found', 404);
 			}
+			console.log("ride", ride)
 			return ride;	
 		} catch (error) {
 			console.log(error)
@@ -72,5 +75,21 @@ export class RazorpayService {
 		}
 	}	
 
+	async updatePaymentStatus(rideId: string, status: string) {
+		try {
+			const ride = await this.rideModel.findByIdAndUpdate(
+				rideId,
+				{ paymentStatus: PaymentStatus.SUCCESS },
+				{ new: true },
+			);
+			if (!ride) {
+				throw new HttpException('Ride not found', 404);
+			}
+			return ride;
+		} catch (error) {
+			console.log(error)
+			throw error instanceof HttpException ? error : new HttpException("Internal Server Error - updating payment status", 500)
+		}
 
+	}
 }

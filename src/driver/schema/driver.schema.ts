@@ -42,7 +42,7 @@ export class Driver {
 	@Prop({ default: VerficationSTATUS.PENDING, enum: VerficationSTATUS })
 	verificationStatusFromAdmin: VerficationSTATUS;		
 
-	@Prop({ default: DriverStatus.OFFLINE, enum: DriverStatus}) // online / offline wala Status
+	@Prop({ default: DriverStatus.OFFLINE, enum: DriverStatus}) 
 	status: DriverStatus;
 }
 

@@ -13,6 +13,7 @@ import { FileUploadModule } from './file-upload/file-upload.module';
 import { RideModule } from './ride/ride.module';
 import { WebsocketModule } from './websocket/websocket.module';
 import { RazorpayModule } from './payment/razorpay.module';
+import { FcmModule } from './fcm/fcm.module';
 
 @Module({
 	imports: [AuthModule,
@@ -27,6 +28,7 @@ import { RazorpayModule } from './payment/razorpay.module';
 		AdminModule,			
 		WebsocketModule,
 		RazorpayModule,
+		FcmModule,
 	],
   controllers: [AppController],
   providers: [AppService],

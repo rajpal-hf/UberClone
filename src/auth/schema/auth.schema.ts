@@ -22,7 +22,8 @@ export class Auth {
 	role: UserRole
 	
 	@Prop({ default: null })
-	socketId : string
+	socketId: string
+	
 	
 }
 

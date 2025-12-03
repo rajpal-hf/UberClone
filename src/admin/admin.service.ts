@@ -5,6 +5,8 @@ import { Auth, AuthDocument } from 'src/auth/schema/auth.schema';
 import { Driver, DriverDocument } from 'src/driver/schema/driver.schema';
 import { Vehicle, VehicleDocument } from 'src/vehicle/schema/vehicle.schema';
 import { VerficationSTATUS, UserRole } from 'src/common/constants';
+import { Ride, RideDocument } from 'src/ride/schema/ride.schema';
+import { Payment, PaymentDocument, PaymentStatus } from 'src/ride/schema/payment.schema';
 
 @Injectable()
 export class AdminService {
@@ -12,6 +14,8 @@ export class AdminService {
 		@InjectModel(Auth.name) private authModel: Model<AuthDocument>,
 		@InjectModel(Driver.name) private driverModel: Model<DriverDocument>,
 		@InjectModel(Vehicle.name) private vehicleModel: Model<VehicleDocument>,
+		@InjectModel(Ride.name) private rideModel: Model<RideDocument>,
+		@InjectModel(Payment.name) private paymentModel: Model<PaymentDocument>,
 	) { }
 
 	// ------------------ USERS ------------------
@@ -43,6 +47,28 @@ export class AdminService {
 		
 	}
 
+	async getSingleRider(id: string) {
+		try {
+			if (!Types.ObjectId.isValid(id)) {
+				throw new HttpException("Invalid rider ID", 400);
+			}
+
+			const user = await this.authModel
+				.findOne({ _id: new Types.ObjectId(id), role: UserRole.RIDER })
+				.select("-password")
+				.lean();
+
+			if (!user) {
+				throw new HttpException("Rider not found", 404);
+			}
+			
+			return { user };
+		} catch (error) {
+			throw new HttpException("Error fetching rider detail", 500);
+		}
+	}
+
+
 	//  `````````````````Drivers``````````````
 	async getDriver(page: number, limit: number) {
 
@@ -73,6 +99,32 @@ export class AdminService {
 			throw error instanceof HttpException ? error : new HttpException("Internal Server Error - getting driver", 500)
 		}
 		
+	}
+	async getSingleDriver(id: string) {
+		try {
+			if (!Types.ObjectId.isValid(id)) {
+				throw new HttpException("Invalid driver ID", 400);
+			}
+
+			const driver = await this.driverModel
+				.findById(id)
+				.populate("userId", "name email phone")
+				.populate("vehicleId")
+				.lean();
+
+			if (!driver) {
+				throw new HttpException("Driver not found", 404);
+			}
+
+			const rides = await this.rideModel
+				.find({ driverId: id })
+				.populate("riderId", "name email")
+				.lean();
+
+			return { driver, rides };
+		} catch (error) {
+			throw new HttpException("Error fetching driver detail", 500);
+		}
 	}
 
 
@@ -206,4 +258,120 @@ export class AdminService {
 			vehicle,
 		};
 	}
+
+
+	async getDashboardStats() {
+		try {
+			const totalRiders = await this.authModel.countDocuments({ role: UserRole.RIDER });
+			const totalDrivers = await this.authModel.countDocuments({ role: UserRole.DRIVER });
+			// const totalDrivers = await this.driverModel.countDocuments();
+
+			const completedTrips = await this.rideModel.countDocuments({ rideStatus: "completed" });
+			const ongoingTrips = await this.rideModel.countDocuments({ rideStatus: "in_progress" });
+			const cancelledTrips = await this.rideModel.countDocuments({ rideStatus: "cancelled" });
+
+			const totalRevenue = await this.paymentModel.aggregate([
+				{ $match: { status: PaymentStatus.SUCCESS } },
+				{ $group: { _id: null, total: { $sum: "$amount" } } }
+			]);
+
+			return {
+				totalRiders,
+				totalDrivers,
+				trips: {
+					completed: completedTrips,
+					ongoing: ongoingTrips,
+					cancelled: cancelledTrips,
+				},
+				revenue: totalRevenue[0]?.total || 0,
+			}
+		} catch (error) {
+			console.log(error);
+			throw new HttpException("Internal Error - Dashboard Stats", 500);
+		}
+	}
+
+	async getTrips(page: number, limit: number) {
+		try {
+			const skip = (page - 1) * limit;
+			const total = await this.rideModel.countDocuments();
+
+			const rides = await this.rideModel.find()
+				.populate("riderId", "name email")
+				.populate("driverId", "name email")
+				.skip(skip)
+				.limit(limit)
+				.lean();
+
+			return {
+				page,
+				limit,
+				total,
+				totalPages: Math.ceil(total / limit),
+				rides,
+			};
+		} catch (error) {
+			throw new HttpException("Error getting rides", 500);
+		}
+	}
+
+
+
+	async getPayments(page: number, limit: number) {
+
+		try {
+			const skip = (page - 1) * limit;
+			const total = await this.paymentModel.countDocuments();
+
+			const payments = await this.paymentModel.find()
+				.populate("rideId", "fare")
+				.populate("riderId", "name Phone")
+				.skip(skip)
+				.limit(limit)
+				.lean();
+
+			return {
+				page,
+				limit,
+				total,
+				totalPages: Math.ceil(total / limit),
+				payments,
+			};
+		} catch (error) {
+			console.error(error);
+			throw error instanceof HttpException ? error : new HttpException("Error getting payments", 500);
+		}
+		
+	}
+
+	async getRideStatusSummary() {
+		const statuses = await this.rideModel.aggregate([
+			{ $group: { _id: "$rideStatus", total: { $sum: 1 } } },
+			{ $project: { name: "$_id", value: "$total", _id: 0 } },
+		]);
+
+		return statuses;
+	}
+
+	async getWeeklyRevenue() {
+		const revenue = await this.paymentModel.aggregate([
+			{ $match: { status: PaymentStatus.SUCCESS } },
+			{
+				$group: {
+					_id: { $dayOfWeek: "$paymentDate" },
+					revenue: { $sum: "$amount" }
+				}
+			},
+			{
+				$project: {
+					_id: 0,
+					day: "$_id",
+					revenue: 1
+				}
+			}
+		]);
+		return revenue;
+	}
+
+
 }

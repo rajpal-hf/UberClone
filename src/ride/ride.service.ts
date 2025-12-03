@@ -15,9 +15,8 @@ export class RideService {
 		@InjectModel(Ride.name) private rideModel: Model<RideDocument>,
 		@InjectModel(Auth.name) private authModel: Model<AuthDocument>,
 		@InjectModel(Driver.name) private driverModel: Model<DriverDocument>,
-			) { }
-
-
+	) { }
+	
 	async createRide(dto: CreateRideDto, rid: string) {
 
 		const id = new Types.ObjectId(rid);
@@ -123,6 +122,69 @@ export class RideService {
 		}
 	}
 
+	// async startRide(rideId: string, driverId: string) {
+	// 	try {
+	// 		// Find the ride
+	// 		const ride = await this.rideModel.findById(rideId);
+	// 		console.log("ride found in startRide", ride)
+	// 		if (!ride) throw new HttpException("Ride not found", 404);
+
+	// 		// Check if ride is already in progress or completed
+	// 		if (ride.rideStatus === "in_progress") {
+	// 			throw new HttpException("Ride already in progress", 400);
+	// 		}
+	// 		if (ride.rideStatus === "completed") {
+	// 			throw new HttpException("Ride already completed", 400);
+	// 		}
+
+	// 		// Find the driver
+	// 		const driver = await this.driverModel.findOne({ userId: new Types.ObjectId(driverId) });
+	// 		if (!driver) throw new HttpException("Driver not found", 404);
+
+			
+
+	// 		// Ensure driver location exists
+	// 		if (!ride.driverLocation) {
+	// 			throw new HttpException("Driver location unavailable", 400);
+	// 		}
+
+	// 		// Calculate distance from driver to pickup location
+	// 		const distanceMeters = getDistanceInMeters(
+	// 			ride.driverLocation.lat,
+	// 			ride.driverLocation.lng,
+	// 			ride.pickupLocation.lat,
+	// 			ride.pickupLocation.lng
+	// 		);
+
+	// 		// Only allow starting if within 100 meters
+	// 		if (distanceMeters > 100) {
+	// 			throw new HttpException(
+	// 				`Driver is too far from pickup location: ${Math.round(distanceMeters)} meters`,
+	// 				400
+	// 			);
+	// 		}
+
+			
+	// 		// Update ride status and startTime
+	// 		ride.rideStatus = "in_progress";
+	// 		ride.startTime = new Date();
+	// 		await ride.save();
+
+	// 		console.log("ride started successfully", ride)
+
+	// 		return {
+	// 			success: true,
+	// 			ride,
+	// 		};
+	// 	} catch (error) {
+	// 		console.error(error);
+	// 		throw error instanceof HttpException
+	// 			? error
+	// 			: new HttpException("Internal Server Error - starting ride", 500);
+	// 	}
+	// }
+
+
 	async getRides(id: string) {
 		try {
 			const rides = await this.rideModel.find({ id: id, rideStatus: 'pending' })
@@ -186,12 +248,6 @@ export class RideService {
 				driverId: new Types.ObjectId(driverId),
 			});
 
-			// ithe ride mili ? ..
-			console.log("ride kya hai ji")
-			console.log( "eeeeeee",ride)	
-			console.log("eeeeeee",dto)
-			console.log("eeeeeee",driverId)
-
 			if (!ride) throw new HttpException('Ride not found', 404);
 
 			// Distance + fare
@@ -216,7 +272,6 @@ export class RideService {
 			return {
 				success: true,
 				ride,
-				
 			};
 
 		} catch (error) {
@@ -228,6 +283,103 @@ export class RideService {
 	}
 
 	
+
+	// async completeRide(rideId: string, driverId: string, dto: ActualDropoffDto) {
+	// 	try {
+	// 		const ride = await this.rideModel.findOne({
+	// 			_id: new Types.ObjectId(rideId),
+	// 			driverId: new Types.ObjectId(driverId),
+	// 		});
+
+	// 		if (!ride) throw new HttpException("Ride not found", 404);
+
+	// 		// ----- EDGE CASE 1: verify ride status -----
+	// 		if (ride.rideStatus === "completed")
+	// 			throw new HttpException("Ride already completed", 400);
+
+	// 		if (ride.rideStatus === "cancelled")
+	// 			throw new HttpException("Cancelled ride cannot be completed", 400);
+
+	// 		if (ride.rideStatus !== "in_progress")
+	// 			throw new HttpException(
+	// 				`Ride must be in_progress to complete. Current: ${ride.rideStatus}`,
+	// 				400
+	// 			);
+
+	// 		// ----- EDGE CASE 2: ensure driverLocation exists -----
+	// 		if (!ride.driverLocation)
+	// 			throw new HttpException(
+	// 				"Driver location not available. Cannot verify final proximity.",
+	// 				400
+	// 			);
+
+	// 		// Distance from pickup → actual dropoff
+	// 		const tripDistanceMeters = getDistanceInMeters(
+	// 			ride.pickupLocation.lat,
+	// 			ride.pickupLocation.lng,
+	// 			dto.dropoffLocation.lat,
+	// 			dto.dropoffLocation.lng
+	// 		);
+
+	// 		// ----- EDGE CASE 3: dropoff too close to pickup -----
+	// 		if (tripDistanceMeters < 20)
+	// 			throw new HttpException(
+	// 				"Dropoff is too close to pickup. Cannot complete ride.",
+	// 				400
+	// 			);
+
+	// 		// ----- EDGE CASE 4: unrealistic trip distance -----
+	// 		if (tripDistanceMeters < 200)
+	// 			throw new HttpException(
+	// 				"Ride distance too small. Invalid dropoff.",
+	// 				400
+	// 			);
+
+	// 		const driverDistanceMeters = getDistanceInMeters(
+	// 			ride.driverLocation.lat,
+	// 			ride.driverLocation.lng,
+	// 			dto.dropoffLocation.lat,
+	// 			dto.dropoffLocation.lng
+	// 		);
+
+	// 		if (driverDistanceMeters > 1000) {
+	// 			throw new HttpException(
+	// 				`Driver too far from dropoff. Must be under 1000m. Current: ${Math.round(
+	// 					driverDistanceMeters
+	// 				)}m`,
+	// 				400
+	// 			);
+	// 		}
+
+	// 		const newFare = totalFare(ride.vehicleType, tripDistanceMeters);
+
+	// 		if (!ride.fare || newFare > ride.fare) {
+	// 			ride.fare = newFare;
+	// 		}
+
+	// 		ride.actualDropoffLocation = dto.dropoffLocation;
+	// 		ride.distance = tripDistanceMeters / 1000;
+	// 		ride.endTime = new Date();
+	// 		ride.rideStatus = "completed";
+
+	// 		await ride.save();
+
+	// 		return {
+	// 			success: true,
+	// 			ride,
+	// 		};
+
+	// 	} catch (error) {
+	// 		console.log(error);
+	// 		throw error instanceof HttpException
+	// 			? error
+	// 			: new HttpException(
+	// 				"Internal Server Error - completing ride",
+	// 				500
+	// 			);
+	// 	}
+	// }
+
 
 	
 

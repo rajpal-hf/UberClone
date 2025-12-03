@@ -18,6 +18,7 @@ export class RazorpayController {
 
 	@Post('verify')
 	async verifyPayment(@Body() body: any) {
+		console.log("Verifying payment with body:", body);
 
 		const {
 			razorpay_order_id,																
@@ -34,17 +35,20 @@ export class RazorpayController {
 			razorpay_order_id,
 			razorpay_payment_id,
 		);
-
+console.log("Is payment signature valid?", valid);
 		if (!valid) {
 			return { success: false, message: 'Invalid signature' };
 		}
 		// Step 2: Validate amount with ride
 		const ride = await this.razorpayService.getRideById(rideId);
 		if (!ride) return { success: false, message: 'Ride not found' };
+		console.log("Ride found for payment verification:", rideId, "with fare:", ride.fare);
+		console.log("Payment amount:", amount);
 
 		if (ride.fare! * 100 !== amount) {
 			return { success: false, message: 'Amount mismatch' };
 		}
+		console.log("Payment verified successfully for ride:", rideId);
 
 		await this.razorpayService.savePayment({
 			rideId,
@@ -53,6 +57,9 @@ export class RazorpayController {
 			transactionId: razorpay_payment_id,
 			status: "SUCCESS",
 		});
+
+		await this.razorpayService.updatePaymentStatus(rideId, "completed");
+		
 		return { success: true };
 	}
 

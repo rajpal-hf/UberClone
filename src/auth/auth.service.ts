@@ -61,6 +61,7 @@ export class AuthService implements OnApplicationBootstrap {
 				throw new HttpException("All Fields are required", 400)
 			}
 			const userExist = await this.authModel.findOne({ email: email })
+			
 
 			if (userExist) {
 				throw new HttpException("User Already exist", 400)

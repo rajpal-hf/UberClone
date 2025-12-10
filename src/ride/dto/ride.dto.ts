@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsObject, IsString, IsNumber, IsOptional, IsMongoId, IsEnum } from 'class-validator';
+import { IsNotEmpty, IsObject, IsString, IsNumber, IsOptional, IsMongoId, IsEnum, IsDate, IsDateString } from 'class-validator';
 import { VehicleType } from 'src/common/constants';
 
 export class CreateRideDto {
@@ -44,6 +44,57 @@ dropoffLocation: {
 	@ApiProperty( { example: "4" })
 	@IsNumber()
 	fare: number
+}
+
+export class CreateScheduleRideDto {
+	@ApiProperty({
+		description: 'Pickup location details including latitude, longitude, and optional address',
+		example: {
+			lat: 28.6139,
+			lng: 77.2090,
+			address: 'Connaught Place, New Delhi, India',
+		},
+	})
+	@IsObject()
+	@IsNotEmpty()
+	pickupLocation: {
+
+	lat: number;
+	lng: number;
+	address?: string;
+};
+
+@ApiProperty({
+	description: 'Drop-off location details including latitude, longitude, and optional address',
+	example: {
+		lat: 28.4595,
+		lng: 77.0266,
+		address: 'Cyber Hub, Gurugram, Haryana, India',
+	},
+})
+@IsObject()
+@IsNotEmpty()
+dropoffLocation: {
+		lat: number;
+		lng: number;
+	address ?: string;
+};
+	
+	
+	@ApiProperty( { example: "auto" })
+	@IsEnum(VehicleType)
+	vehicleType: VehicleType
+	
+	@ApiProperty( { example: "4" })
+	@IsNumber()
+	fare: number
+
+	@ApiProperty({
+		example: "2025-01-21T14:30:00Z",
+		description: "Scheduled ride date & time (ISO format)",
+	})
+	@IsDateString()
+	scheduledFor: string;
 }
 
 export class RideParamDto { 

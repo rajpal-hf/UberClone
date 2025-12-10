@@ -1,13 +1,14 @@
 // ride.service.ts
-import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, HttpException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, ObjectId, Types } from 'mongoose';
 import { Ride, RideDocument } from './schema/ride.schema';
-import { ActualDropoffDto, CreateRideDto, DriverLocationDto, EstimatedFareDto } from './dto/ride.dto';
+import { ActualDropoffDto, CreateRideDto, CreateScheduleRideDto, DriverLocationDto, EstimatedFareDto } from './dto/ride.dto';
 import { Auth, AuthDocument } from 'src/auth/schema/auth.schema';
-import { RideCancelBy, UserRole } from 'src/common/constants';
+import { RideCancelBy, UserRole, VerficationSTATUS } from 'src/common/constants';
 import { Driver, DriverDocument } from 'src/driver/schema/driver.schema';
 import { getDistanceInMeters, totalFare, totalTime, typeWiseFare, typeWiseSpeed } from 'src/common/fareCal';
+import { verify } from 'crypto';
 
 @Injectable()
 export class RideService {
@@ -16,7 +17,7 @@ export class RideService {
 		@InjectModel(Auth.name) private authModel: Model<AuthDocument>,
 		@InjectModel(Driver.name) private driverModel: Model<DriverDocument>,
 	) { }
-	
+
 	async createRide(dto: CreateRideDto, rid: string) {
 
 		const id = new Types.ObjectId(rid);
@@ -39,7 +40,7 @@ export class RideService {
 				createdAt: new Date(),
 			});
 
-		
+
 
 			return {
 				success: true,
@@ -52,12 +53,121 @@ export class RideService {
 		}
 	}
 
-	async startRide(rideId: string, dId: string) {
+
+	async scheduleRide(dto: CreateScheduleRideDto, userId: string) {
+
+		const scheduledDate = new Date(dto.scheduledFor);
+		const now = new Date();
+
+
+		if (isNaN(scheduledDate.getTime())) {
+			throw new BadRequestException("Invalid date format");
+		}
+
+		if (scheduledDate <= now) {
+			throw new BadRequestException("Scheduled time must be in the future");
+		}
+
+		const minGap = 30 * 60 * 1000; // 30min
+		if (scheduledDate.getTime() - now.getTime() < minGap) {
+			throw new BadRequestException(`Ride must be scheduled at least 30 minutes ahead`);
+		}
+
+		const ride = await this.rideModel.create({
+			riderId: new Types.ObjectId(userId),
+			...dto,
+			scheduledFor: scheduledDate,
+			status: 'scheduled',
+			cronLocked: false,
+			reminderSent: false,
+			retryCount: 0,
+		});
+
+		return {
+			message: "Ride scheduled successfully",
+			rideId: ride._id,
+			scheduledFor: scheduledDate.toISOString(),
+		};
+	}
+
+	// Get all scheduled rides for a user
+	async getScheduledRides(userId: string) {
+		try {
+			const rides = await this.rideModel
+				.find({
+					riderId: new Types.ObjectId(userId),
+					status: { $in: ['scheduled', 'processing'] },
+				})
+				.sort({ scheduledFor: 1 })
+				.lean();
+
+			return {
+				success: true,
+				rides,
+			};
+		} catch (error) {
+			console.log(error);
+			throw error instanceof HttpException
+				? error
+				: new HttpException("Internal Server Error - get scheduled rides", 500);
+		}
+	}
+
+	// Cancel a scheduled ride
+	async cancelScheduledRide(rideId: string, userId: string) {
+		try {
+			const ride = await this.rideModel.findById(rideId);
+
+			if (!ride) {
+				throw new NotFoundException("Ride not found");
+			}
+
+			// Verify ownership
+			if (ride.riderId.toString() !== userId) {
+				throw new BadRequestException("Unauthorized to cancel this ride");
+			}
+
+			// Can only cancel if still in scheduled or processing state
+			if (!['scheduled', 'processing'].includes(ride.status)) {
+				throw new BadRequestException(
+					`Cannot cancel ride in ${ride.status} status. Only scheduled rides can be cancelled.`
+				);
+			}
+
+			// Update ride status
+			ride.status = 'failed';
+			ride.cronLocked = false;
+			await ride.save();
+
+			return {
+				success: true,
+				message: "Scheduled ride cancelled successfully",
+				ride,
+			};
+		} catch (error) {
+			console.log(error);
+			throw error instanceof HttpException
+				? error
+				: new HttpException("Internal Server Error - cancel scheduled ride", 500);
+		}
+	}
+
+
+
+
+
+	async startRide(rideId: string, dId: string){
 
 		console.log("check 1")
 		try {
 
 			console.log("check 2")
+			console.log("rideId and dId in startRide", rideId, dId)
+
+			if (!Types.ObjectId.isValid(rideId) || !Types.ObjectId.isValid(dId)) {
+				throw new HttpException("Invalid ObjectId format - BE - startRide", 400);
+			}
+			console.log(typeof rideId , typeof dId)
 
 			const id = new Types.ObjectId(rideId)
 
@@ -141,7 +251,7 @@ export class RideService {
 	// 		const driver = await this.driverModel.findOne({ userId: new Types.ObjectId(driverId) });
 	// 		if (!driver) throw new HttpException("Driver not found", 404);
 
-			
+
 
 	// 		// Ensure driver location exists
 	// 		if (!ride.driverLocation) {
@@ -164,7 +274,7 @@ export class RideService {
 	// 			);
 	// 		}
 
-			
+
 	// 		// Update ride status and startTime
 	// 		ride.rideStatus = "in_progress";
 	// 		ride.startTime = new Date();
@@ -225,7 +335,7 @@ export class RideService {
 				throw new HttpException('Ride not found or already taken', 404);
 			}
 
-			
+
 
 			// Notify all drivers (optional) that ride is taken
 
@@ -282,7 +392,7 @@ export class RideService {
 		}
 	}
 
-	
+
 
 	// async completeRide(rideId: string, driverId: string, dto: ActualDropoffDto) {
 	// 	try {
@@ -381,11 +491,11 @@ export class RideService {
 	// }
 
 
-	
+
 
 	//```````````````````  cancelRide ```````````````````
-	
-	
+
+
 
 	async cancelRide(id: string, Uid: ObjectId) {
 		const rideId = id
@@ -408,13 +518,13 @@ export class RideService {
 			if (userRole === UserRole.RIDER) {
 				await this.rideModel.findOneAndUpdate(
 					{ _id: rideId },
-					{ $set: { rideStatus: 'cancelled', cancelBy: RideCancelBy.RIDER}},
+					{ $set: { rideStatus: 'cancelled', cancelBy: RideCancelBy.RIDER } },
 				);
 			}
 			if (userRole === UserRole.DRIVER) {
 				await this.rideModel.findOneAndUpdate(
 					{ _id: rideId },
-					{ $set: { rideStatus: 'cancelled', userId: Uid, cancelBy: RideCancelBy.DRIVER }},
+					{ $set: { rideStatus: 'cancelled', userId: Uid, cancelBy: RideCancelBy.DRIVER } },
 				);
 			}
 
@@ -430,12 +540,12 @@ export class RideService {
 		}
 
 	}
-	
+
 
 
 	//```````````````````  getAcceptedRide ```````````````````
 
-	
+
 	async getAcceptedOrInProgressRide(rideId: string, req: string) {
 		try {
 			if (!Types.ObjectId.isValid(rideId) || !Types.ObjectId.isValid(req)) {
@@ -519,7 +629,7 @@ export class RideService {
 				throw new HttpException("Invalid or missing driver location", 422);
 			}
 
-		
+
 			let pickupDistance: number;
 
 			try {
@@ -545,7 +655,7 @@ export class RideService {
 				user: ride.riderId ?? null,
 				pickupLocation: ride.pickupLocation,
 				driverLocation: ride.driverLocation,
-				pickupDistance: (pickupDistance/ 1000).toFixed(2), 
+				pickupDistance: (pickupDistance / 1000).toFixed(2),
 				isDriverClose: pickupDistance <= 30,  // example threshold
 			};
 
@@ -559,7 +669,7 @@ export class RideService {
 				);
 		}
 	}
-	
+
 
 	async activeRide(rideId: string, driverIdString: string) {
 		try {
@@ -575,7 +685,7 @@ export class RideService {
 
 			console.log("rideObjectId", rideObjectId);
 			console.log("driverId", driverId);
-	
+
 			const ride = await this.rideModel
 				.findOne({
 					_id: rideObjectId,
@@ -611,17 +721,17 @@ export class RideService {
 			);
 			const remainingKm = +(remainingMeters / 1000).toFixed(2);
 
-		
+
 			const now = new Date();
 			const startTime = ride.startTime ?? now;
 
 			const elapsedMinutes = Math.floor((now.getTime() - startTime.getTime()) / 60000);
 
-			
+
 			const speedKmHr = typeWiseSpeed[ride.vehicleType]; // from your fareCal
 			const estimatedRemainingMinutes = Math.ceil((remainingKm / speedKmHr) * 60);
 
-		
+
 			const farePerKm = typeWiseFare[ride.vehicleType];
 
 			const estimatedFare = +(totalKm * farePerKm).toFixed(2);
@@ -660,7 +770,7 @@ export class RideService {
 	}
 
 
-	
+
 
 	//```````````````````  getDriversForRide `````````````````````````````
 	getDriversForRide(rideId: string) {
@@ -670,8 +780,8 @@ export class RideService {
 				.populate('driverId name phone');
 		} catch (error) {
 			console.log(error);
-			throw error instanceof HttpException ? error : new HttpException("Internal Server Error - getting driver for ride", 500);	
-		}	
+			throw error instanceof HttpException ? error : new HttpException("Internal Server Error - getting driver for ride", 500);
+		}
 	}
 
 
@@ -699,8 +809,8 @@ export class RideService {
 				const farePerKm = typeWiseFare[type];
 				const speedKmHr = typeWiseSpeed[type];
 
-				estimatedFare[type] = + (farePerKm * km).toFixed(2); 
-				estimatedTime[type] = +Math.ceil((km / speedKmHr) * 60) 
+				estimatedFare[type] = + (farePerKm * km).toFixed(2);
+				estimatedTime[type] = +Math.ceil((km / speedKmHr) * 60)
 			}
 
 			// 3. Return results
@@ -721,20 +831,42 @@ export class RideService {
 
 	async getAllnewRides() {
 		try {
-			const rides = await this.rideModel.find({ rideStatus: 'pending' }).populate('riderId', 'name phone')
-;
-			
+			const rides = await this.rideModel.find({ rideStatus: 'pending' }).populate('riderId', 'name phone');
+
 			return {
 				success: true,
 				rides
 			}
 		} catch (error) {
 			console.log(error)
-			throw error instanceof HttpException ? error : new HttpException("Internal Server Error - new rides", 500)	
+			throw error instanceof HttpException ? error : new HttpException("Internal Server Error - new rides", 500)
 		}
 	}
 
 
+	async isDeriverVerified(driverId: string) {
+		try {
+			console.log("Checking verification for driverId:", driverId);
+			const driver = await this.driverModel.findOne({ userId: new Types.ObjectId(driverId) });
+
+			if (!driver) {
+				throw new HttpException("Driver not found", 404);
+			}
+
+			const isVerifiedByDocs = driver.verificationStatusFromAdmin === VerficationSTATUS.VERIFIED;
+
+			console.log("isDeriverVerified:", isVerifiedByDocs);
+
+			return isVerifiedByDocs
+			
+
+		} catch (error) {
+			console.log(error);
+			throw error instanceof HttpException
+				? error
+				: new HttpException("Internal Server Error - checking driver verification", 500);
+		}
+	}
 
 
 }

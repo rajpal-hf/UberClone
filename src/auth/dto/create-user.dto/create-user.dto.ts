@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsEmail, IsEnum, IsNotEmpty, IsString } from "class-validator";
+import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString } from "class-validator";
 import { UserRole } from "src/common/constants";
 
 export class CreateUserDto {
@@ -45,6 +45,11 @@ export class UserLoginDto {
 	@ApiProperty({ example: "123456" })
 	@IsNotEmpty()
 	otp: string
+
+	@ApiProperty({ example: "fcm_token_example" })
+	@IsString()
+		@IsOptional()
+	fcmToken?: string
 }
 
 export class SendOtpDto {

@@ -23,10 +23,6 @@ export class SmsService {
 		this.client = twilio(this.accountSid, this.authToken);
 	}
 
-	// ✅ Generate a 6-digit OTP
-
-
-	// ✅ Send an OTP SMS
 	async sendSms(options: SmsOptions) {
 		const {body , to} = options
 		if (!this.fromNumber) {

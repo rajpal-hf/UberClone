@@ -17,16 +17,11 @@ export class RazorpayController {
 	}
 
 	@Post('verify')
+		
 	async verifyPayment(@Body() body: any) {
 		console.log("Verifying payment with body:", body);
 
-		const {
-			razorpay_order_id,																
-			razorpay_payment_id,
-			razorpay_signature,
-			rideId,
-			riderId,
-			amount,
+		const {razorpay_order_id,razorpay_payment_id,razorpay_signature,rideId,riderId,amount,
 		} = body;
 
 		// Step 1: Verify signature

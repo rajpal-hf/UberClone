@@ -43,3 +43,17 @@ export class VehicleActionDto {
 	@IsMongoId()
 	vehicleId: string;
 }
+
+export class SendNotificationDto{
+	@ApiProperty()
+	@IsNotEmpty()
+	title: string;
+
+	@ApiProperty()
+	@IsNotEmpty()
+	message: string;
+
+	@ApiProperty({example : ["fcm_token1", "fcm_token2"]})
+	@IsNotEmpty({each:true})
+	recipients: string[];
+}

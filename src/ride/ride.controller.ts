@@ -2,7 +2,7 @@
 
 import { Body, Controller, Get, Param, Patch, Post, Put, Req, UseGuards } from '@nestjs/common';
 import { RideService } from './ride.service';
-import {  ActualDropoffDto, CreateRideDto, DriverLocationDto, EstimatedFareDto, RideParamDto } from './dto/ride.dto';
+import { ActualDropoffDto, CreateRideDto, CreateScheduleRideDto, DriverLocationDto, EstimatedFareDto, RideParamDto } from './dto/ride.dto';
 import { AuthGuard } from 'src/auth/guard/auth.Guard';
 import { RolesGuard } from 'src/roleGuard/roles.guard';
 import { Roles } from 'src/roleGuard/roles.decorator';
@@ -22,7 +22,14 @@ export class RideController {
 	createRide(@Body() dto: CreateRideDto, @Req() req: any) {
 		return this.rideService.createRide(dto, req.user.id);
 	}
-	
+	@ApiBearerAuth()
+	@UseGuards(AuthGuard, RolesGuard)
+	@Roles(UserRole.RIDER)
+	@Post('schedule-ride')
+	createScheduleRide(@Body() dto: CreateScheduleRideDto, @Req() req: any) {
+		return this.rideService.scheduleRide(dto, req.user.id);
+	}
+
 
 	@ApiBearerAuth()
 	@UseGuards(AuthGuard)
@@ -31,31 +38,31 @@ export class RideController {
 		return this.rideService.estimatedFare(dto);
 	}
 
-	
+
 	@ApiBearerAuth()
 	@UseGuards(AuthGuard, RolesGuard)
 	@Roles(UserRole.DRIVER)
 	@Post('accept/:id')
 	acceptRide(@Param() params: RideParamDto, @Req() req: any, @Body() dto: DriverLocationDto) {
-		
-		return this.rideService.acceptRide(params.id , req.user.id , dto)
+
+		return this.rideService.acceptRide(params.id, req.user.id, dto)
 	}
-	
+
 
 	@ApiBearerAuth()
 	@UseGuards(AuthGuard, RolesGuard)
 	@Roles(UserRole.DRIVER)
 	@Patch('start/:id')
 	startRide(@Param() params: RideParamDto, @Req() req: any) {
-		return this.rideService.startRide(params.id , req.user.id)
+		return this.rideService.startRide(params.id, req.user.id)
 	}
-	
+
 	@ApiBearerAuth()
 	@UseGuards(AuthGuard, RolesGuard)
 	@Roles(UserRole.DRIVER)
 	@Patch('complete/:id')
-	completeRide(@Param() params: RideParamDto, @Req() req: any , @Body() dto: ActualDropoffDto) {
-		return this.rideService.completeRide(params.id , req.user.id , dto)
+	completeRide(@Param() params: RideParamDto, @Req() req: any, @Body() dto: ActualDropoffDto) {
+		return this.rideService.completeRide(params.id, req.user.id, dto)
 	}
 
 	@ApiBearerAuth()
@@ -65,12 +72,12 @@ export class RideController {
 		return this.rideService.cancelRide(params.id, req.user.id);
 	}
 
-	
+
 	@ApiBearerAuth()
 	@UseGuards(AuthGuard)
 	@Get('driver/:id')
 	getDriverForRide(@Param() params: RideParamDto, @Req() req: any) {
-		return this.rideService.getAcceptedOrInProgressRide(params.id , req.user.id)
+		return this.rideService.getAcceptedOrInProgressRide(params.id, req.user.id)
 	}
 
 	@ApiBearerAuth()
@@ -83,20 +90,37 @@ export class RideController {
 
 
 	@ApiBearerAuth()
-	@UseGuards(AuthGuard )
+	@UseGuards(AuthGuard)
 	@Get('pickup-navigation/:id')
 	pickupNavigation(@Param() params: RideParamDto, @Req() req: any) {
-		return this.rideService.pickupNavigation(params.id , req.user.id)
+		return this.rideService.pickupNavigation(params.id, req.user.id)
 	}
 
 
 	@ApiBearerAuth()
-	@UseGuards(AuthGuard )
+	@UseGuards(AuthGuard)
 	@Get('active-ride/:id')
 	activeRide(@Param() params: RideParamDto, @Req() req: any) {
-		return this.rideService.activeRide(params.id , req.user.id)
+		return this.rideService.activeRide(params.id, req.user.id)
 	}
 
+	// Get all scheduled rides for the user
+	@ApiBearerAuth()
+	@UseGuards(AuthGuard, RolesGuard)
+	@Roles(UserRole.RIDER)
+	@Get('scheduled')
+	getScheduledRides(@Req() req: any) {
+		return this.rideService.getScheduledRides(req.user.id);
+	}
+
+	// Cancel a scheduled ride
+	@ApiBearerAuth()
+	@UseGuards(AuthGuard, RolesGuard)
+	@Roles(UserRole.RIDER)
+	@Patch('scheduled/cancel/:id')
+	cancelScheduledRide(@Param() params: RideParamDto, @Req() req: any) {
+		return this.rideService.cancelScheduledRide(params.id, req.user.id);
+	}
 
 
 }

@@ -14,9 +14,16 @@ import { RideModule } from './ride/ride.module';
 import { WebsocketModule } from './websocket/websocket.module';
 import { RazorpayModule } from './payment/razorpay.module';
 import { FcmModule } from './fcm/fcm.module';
+// import { PayoutModule } from './payout/payout.module';
+import { CronJobModule } from './cron-job/cron-job.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
-	imports: [AuthModule,
+	imports: [
+
+		ScheduleModule.forRoot(),
+
+		AuthModule,
 		ConfigModule.forRoot(),	
 		MongooseModule.forRoot(process.env.MONGO_URL!),
 		MailModule,
@@ -29,6 +36,8 @@ import { FcmModule } from './fcm/fcm.module';
 		WebsocketModule,
 		RazorpayModule,
 		FcmModule,
+		CronJobModule,
+		// PayoutModule,
 	],
   controllers: [AppController],
   providers: [AppService],

@@ -1,7 +1,7 @@
 // admin/admin.controller.ts
 import { Controller, Get, Post, Query, Body, UseGuards, Param } from '@nestjs/common';
 import { AdminService } from './admin.service';
-import { DriverActionDto, GetDriversDto, GetUsersDto, VehicleActionDto } from './dto/admin.dto';
+import { DriverActionDto, GetDriversDto, GetUsersDto, SendNotificationDto, VehicleActionDto } from './dto/admin.dto';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from 'src/auth/guard/auth.Guard';
 import { RolesGuard } from 'src/roleGuard/roles.guard';
@@ -57,7 +57,7 @@ export class AdminController {
 		return this.adminService.getDriver(query.page || 1, query.limit|| 10);
 	}
 
-	@Get('new-drivers')
+	@Get('unverified-drivers')
 	async getNewDrivers(@Query() query: GetDriversDto) {
 		return this.adminService.getNewDrivers(query.page || 1, query.limit|| 10);
 	}
@@ -69,5 +69,11 @@ export class AdminController {
 	@Post('vehicles/accept')
 	async acceptVehicle(@Body() body: VehicleActionDto) {
 		return this.adminService.acceptVehicle(body.vehicleId);
-	}
+	} 
+
+
+		@Post('send-notification')
+	async sendNotification(@Body() body: SendNotificationDto) {
+		return this.adminService.sendNotification(body);
+	}	
 }

@@ -50,7 +50,7 @@ export class AuthService implements OnApplicationBootstrap {
 		}
 	}
 
-	//``````````````````````````````````````````````````````````````````````````````sign up User/driver
+	//``````````````````````````````````````````````````sign up User/driver
 
 	async signup(dto: CreateUserDto) {
 		try {
@@ -98,7 +98,8 @@ export class AuthService implements OnApplicationBootstrap {
 
         if (!phone || !otp) {
             throw new HttpException('All fields are required', HttpStatus.BAD_REQUEST);
-        }
+				}
+			
 
         const user = await this.authModel.findOne({ phone });
         if (!user) {
@@ -136,16 +137,26 @@ export class AuthService implements OnApplicationBootstrap {
         });
 
         // Hide password
-        user.password = '-----';
+			user.password = '-----';
 
-        return {
-					success: true,
-						
-            message: 'Login successful',
-						user,
-						role: user.role,
-            token,
-        };
+			if (dto.fcmToken) {
+				await this.authModel.findByIdAndUpdate(user._id, {
+					$set: { fcmToken: dto.fcmToken }
+				});
+			}
+		
+			
+				
+
+			return {
+				success: true,
+				message: 'Login successful',
+				user,
+				role: user.role,
+				token,
+				fcmToken: dto.fcmToken
+			};
+
     } catch (error) {
         throw error instanceof HttpException
             ? error
@@ -173,6 +184,12 @@ export class AuthService implements OnApplicationBootstrap {
 			const OTP_EXPIRATION_MS = 5 * 60 * 1000;
 			const RATE_LIMIT_MS = 60 * 1000;
 
+			// Check if user exists
+			const userExist = await this.authModel.findOne({ phone });
+			if (!userExist) {
+				throw new HttpException('User with this phone not found', 400);
+			}
+
 			// Check rate limit
 			const recentOtp = await this.smsModel.findOne({
 				phone,
@@ -192,7 +209,7 @@ export class AuthService implements OnApplicationBootstrap {
 			const hashedOtp = await bcrypt.hash(otp, 10);
 
 			// Send SMS
-			const body = `BigBoss vekhla eh tere mtlb da nai aa ${otp} `;
+			const body = `Your One-Time Password (OTP) is: ${otp} `;
 
 			
 			// await this.smsService.sendSms({ to: phone, body });

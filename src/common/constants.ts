@@ -12,7 +12,7 @@ export enum VehicleType {
 }
 
 
-export enum VerficationSTATUS{
+export enum 	VerficationSTATUS{
 	PENDING = "pending",	
 	VERIFIED = "verified",
 	REJECTED = "rejected"

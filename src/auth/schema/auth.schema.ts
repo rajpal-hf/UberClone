@@ -24,6 +24,8 @@ export class Auth {
 	@Prop({ default: null })
 	socketId: string
 	
+	@Prop({ default: null, type: String })
+	fcmToken: string	
 	
 }
 

@@ -7,6 +7,8 @@ import { Vehicle, VehicleDocument } from 'src/vehicle/schema/vehicle.schema';
 import { VerficationSTATUS, UserRole } from 'src/common/constants';
 import { Ride, RideDocument } from 'src/ride/schema/ride.schema';
 import { Payment, PaymentDocument, PaymentStatus } from 'src/ride/schema/payment.schema';
+import { Send } from 'express';
+import { SendNotificationDto } from './dto/admin.dto';
 
 @Injectable()
 export class AdminService {
@@ -371,6 +373,13 @@ export class AdminService {
 			}
 		]);
 		return revenue;
+	}
+
+
+	async sendNotification(body: SendNotificationDto) {
+		
+		console.log("Sending notification with body:", body);
+		return { message: "Notification sent (placeholder)" };
 	}
 
 
